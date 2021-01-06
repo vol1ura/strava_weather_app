@@ -1,0 +1,4 @@
+*.dat
+*.env
+__pycache__/
+.idea/

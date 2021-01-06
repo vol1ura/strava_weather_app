@@ -1,0 +1,19 @@
+{% extends "template.html" %}
+
+{% block title %}Authorized{% endblock%}
+
+{% block maintitle %}
+Authorization OK
+{% endblock %}
+
+        {% block nav %}
+        <a class="nav-link" href="/">Home</a>
+        <a class="nav-link" href="/features/">Features</a>
+        <a class="nav-link" href="/contacts/">Contact</a>
+        {% endblock %}
+
+
+{% block body %}
+<h2>Hello, {{ athlete }}!</h2>
+<p class="lead">App is connected to your Strava profile, you can close the window now.</p>
+{% endblock %}
