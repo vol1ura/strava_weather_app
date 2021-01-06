@@ -1,7 +1,5 @@
 import os
-
 import utilities
-from pprint import pprint
 
 from flask import Flask, render_template, url_for, request, abort, make_response
 
@@ -44,17 +42,14 @@ def webhook():
             res = make_response({'hub.challenge': challenge}, 200)
             res.headers['Content-Type'] = 'application/json'
             return res
-            # return {'hub.challenge': challenge}, 200, 'application/json'
         else:
             print('verify tokens do not match')
-    # else:
-        # pprint(req)
     return 'ouups... something wrong', 500
 
 
 @app.route('/admin/')
 def admin():
-    url = "http://localhost:5000/webhook"  # url_for('webhook', _external=True)
+    url = url_for('webhook', _external=True)
     print(url)
     subs = utilities.subscribe_webhooks(url)
     print(subs)
@@ -82,4 +77,4 @@ def http_500_handler(error):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()  # debug=True
