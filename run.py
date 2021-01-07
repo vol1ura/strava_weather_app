@@ -14,7 +14,7 @@ app = Flask(__name__)
 def index():
     redirect_uri = url_for('auth', _external=True)
     url_to_get_code = utilities.make_link_to_get_code(redirect_uri)
-    return render_template('index.html', link_to_get_code=url_to_get_code)
+    return render_template('index.html', url_to_get_code=url_to_get_code)
 
 
 @app.route('/authorization_successful', methods=['GET'])
@@ -25,6 +25,7 @@ def auth():
     token_response = utilities.get_tokens(code)
     try:
         athlete = token_response['athlete']['firstname'] + ' ' + token_response['athlete']['lastname']
+        utilities.db_add_athlete(token_response)
     except KeyError:
         abort(500)
     else:
@@ -41,25 +42,18 @@ def webhook():
         parser.add_argument('object_id', type=int, required=True)  # activity's ID
         parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
         parser.add_argument('updates', type=dict, required=True)  # For deauth, there is {"authorized": "false"}
-        # try:
         args = parser.parse_args()
-        # except:
-        #     return 'bad data', 400
-        # Check args
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-            #
             # Make operation
-            pass
-        if 'authorized' in args['updates']:
+            utilities.add_weather(args['owner_id'], args['object_id'], lan='ru')
+        if not args['updates'].get('authorized', True):
             # remove athlete from DB
             pass
-
-        print(args['updates']['title'])
         pprint(args)
-        return 'get POST', 200
+        return 'get webhook', 200
     if request.method == 'GET':
         if utilities.is_subscribed():
-            return 'You already subscribed'
+            return 'You are already subscribed', 200
         req = request.values
         mode = req.get('hub.mode', '')
         token = req.get('hub.verify_token', '')
@@ -77,8 +71,6 @@ def webhook():
 
 @app.route('/admin/')
 def admin():
-    url = url_for('webhook', _external=True)
-    print(url)
     if utilities.is_subscribed():
         return 'subscription is OK'
     else:

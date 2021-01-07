@@ -29,6 +29,36 @@ def get_tokens(code):
     return token_response
 
 
+def check_token(user_id):
+    client_id = os.environ.get('STRAVA_CLIENT_ID')
+    client_secret = os.environ.get('STRAVA_CLIENT_SECRET')
+    token_expiration = db.get_token_expiration(user_id)
+    refresh_token = db.get_refresh_token(user_id)
+    if token_expiration < time.time():
+        params = {
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token"
+        }
+        refresh_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
+        try:
+            refresh_token = refresh_response['refresh_token']
+            access_token = refresh_response['access_token']
+            token_expiration = refresh_response['expires_at']
+            db.write_user_token(user_id)
+        except KeyError:
+            print('Token refresh is failed.')
+            return False
+        print('Token was successfully refreshed.')
+    exp_time = token_expiration - int(time.time())  # TODO remove this is only for debug
+    hours = exp_time // 3600
+    mins = (exp_time - 3600 * hours) // 60
+    s = f"{hours}h " if hours != 0 else ""
+    print(f"Token expires after {s}{mins} min")
+    return True
+
+
 def make_link_to_get_code(redirect_url):
     params_oauth = {
         "response_type": "code",
@@ -42,7 +72,8 @@ def make_link_to_get_code(redirect_url):
 
 
 def is_subscribed():
-    """A GET request to the push subscription endpoint can be used to view subscription details.
+    """A GET request to the push subscription endpoint is used to check
+    Strava Webhook status.
 
     :return: boolean
     """
@@ -57,7 +88,7 @@ def is_subscribed():
 def get_activity(user_id, activity_id):
     """Get information about activity
 
-    :param user_id:
+    :param user_id: integer Strava athlete ID
     :param activity_id: integer or string is a number
     :return: dictionary with activity data
     """
@@ -70,7 +101,7 @@ def modify_activity(user_id, activity_id, payload: dict):
     Method can change UpdatableActivity parameters such that description, name, type, gear_id.
     See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
 
-    :param user_id:
+    :param user_id: integer Strava athlete ID
     :param activity_id: integer Strava activity ID
     :param payload: dictionary with keys description, name, type, gear_id, trainer, commute
     :return: dictionary with updated activity parameters
@@ -95,11 +126,11 @@ def add_weather(user_id, activity_id, lan='en'):
         return
     description = activity.get('description', '')
     description = '' if description is None else description
-    if description.startswith('Погода:'):
+    if ('Погода:' in description) or ('Weather:' in description):
         print(f'Weather description for activity ID{activity_id} is already set.')
         return
-    lat = activity['start_latitude']
-    lon = activity['start_longitude']
+    lat = activity.get('start_latitude', 55.75222)  # Moscow latitude default
+    lon = activity.get('start_longitude', 37.61556)  # Moscow longitude default
     time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
     start_time = int(time.mktime(time_tuple))
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
@@ -109,7 +140,7 @@ def add_weather(user_id, activity_id, lan='en'):
                f"lat={lat}&lon={lon}&appid={weather_api_key}"
     aq = requests.get(base_url).json()
     print(aq)
-    print(start_time + 7200 > aq['list'][0]['dt'])
+    print(start_time + 7200 > aq['list'][0]['dt'])  # TODO: remove after debugging
     air_conditions = f"Воздух: {aq['list'][0]['components']['so2']}(PM2.5), " \
                      f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
                      f"{aq['list'][0]['components']['nh3']}(NH₃).\n"

@@ -13,10 +13,11 @@ a:hover {
 .btn-secondary,
 .btn-secondary:hover,
 .btn-secondary:focus {
-  color: #333;
+  color: #ffffff;
   text-shadow: none; /* Prevent inheritance from `body` */
-  background-color: #fff;
-  border: .05rem solid #fff;
+  font-weight: bold;
+  background-color: #FC5200;
+  border: .05rem solid #FC5200;
 }
 
 
