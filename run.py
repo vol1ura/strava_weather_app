@@ -1,9 +1,9 @@
+import manage_db
 import os
 from pprint import pprint
-
 import utilities
 
-from flask import Flask, render_template, url_for, request, abort, make_response
+from flask import Flask, render_template, url_for, request, abort, make_response, g
 from flask_restful import reqparse
 
 
@@ -25,7 +25,9 @@ def auth():
     token_response = utilities.get_tokens(code)
     try:
         athlete = token_response['athlete']['firstname'] + ' ' + token_response['athlete']['lastname']
-        utilities.db_add_athlete(token_response)
+        db = get_db()
+        dbase = manage_db.FDataBase(db)
+        manage_db.add_athlete_db(token_response)
     except KeyError:
         abort(500)
     else:
@@ -97,5 +99,20 @@ def http_500_handler(error):
     return render_template('500.html'), 500
 
 
+def get_db():
+    """ Create link to database if it doesn't exists"""
+    if not hasattr(g, 'link_db'):
+        g.link_db = manage_db.connect_db()
+    return g.link_db
+
+
+@app.teardown_appcontext
+def close_db(error):
+    """Close database when after closing context"""
+    if hasattr(g, 'link_db'):
+        g.link_db.close()
+
+
 if __name__ == '__main__':
-    app.run()  # debug=True TODO: remove to production
+    isDEBUG_MODE = os.environ.get('DEBUG')
+    app.run(debug=isDEBUG_MODE)

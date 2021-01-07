@@ -1,9 +1,8 @@
-import time
-from pprint import pprint
-
 from dotenv import load_dotenv
-import requests
 import os
+from pprint import pprint
+import requests
+import time
 import urllib.parse
 
 
@@ -29,11 +28,11 @@ def get_tokens(code):
     return token_response
 
 
-def check_token(user_id):
+def check_token(token):
     client_id = os.environ.get('STRAVA_CLIENT_ID')
     client_secret = os.environ.get('STRAVA_CLIENT_SECRET')
-    token_expiration = db.get_token_expiration(user_id)
-    refresh_token = db.get_refresh_token(user_id)
+    token_expiration = token['token_expiration']
+    refresh_token = token['refresh_token']
     if token_expiration < time.time():
         params = {
             "client_id": client_id,
@@ -46,7 +45,7 @@ def check_token(user_id):
             refresh_token = refresh_response['refresh_token']
             access_token = refresh_response['access_token']
             token_expiration = refresh_response['expires_at']
-            db.write_user_token(user_id)
+            # TODO: return token
         except KeyError:
             print('Token refresh is failed.')
             return False
@@ -119,6 +118,13 @@ def compass_direction(degree: int, lan='en') -> str:
 
 
 def add_weather(user_id, activity_id, lan='en'):
+    """Add weather conditions to description of Strava activity
+
+    :param user_id: integer Strava athlete ID
+    :param activity_id: Strava activity ID
+    :param lan: language 'ru' or 'en' by default
+    :return:
+    """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     activity = get_activity(user_id, activity_id)
     if activity['manual']:
@@ -153,7 +159,3 @@ def add_weather(user_id, activity_id, lan='en'):
     payload = {'description': weather_desc + air_conditions + description}
     url = f'https://www.strava.com/api/v3/activities/{activity_id}'
     return requests.put(url, headers=get_headers(user_id), data=payload).json()
-
-
-def db_add_athlete(token):
-    pass
