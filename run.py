@@ -13,7 +13,7 @@ def index():
     return render_template('index.html', link_to_get_code=url_to_get_code)
 
 
-@app.route('/authorization_successful/', methods=['GET'])
+@app.route('/authorization_successful', methods=['GET'])
 def auth():
     code = request.values.get('code', None)
     if not code:
@@ -51,9 +51,11 @@ def webhook():
 def admin():
     url = url_for('webhook', _external=True)
     print(url)
-    subs = utilities.subscribe_webhooks(url)
-    print(subs)
-    return 'subscribe'
+    subs = utilities.view_subscription()
+    if subs.ok:
+        return 'subscription is OK'
+    else:
+        return 'no subscription'
 
 
 @app.route('/features/')
@@ -74,6 +76,13 @@ def http_404_handler(error):
 @app.errorhandler(500)
 def http_500_handler(error):
     return render_template('500.html'), 500
+
+
+# @app.route('/update_server', methods=['POST'])
+#     def deploy():
+#         if request.method == 'POST':
+#             repo = git.Repo('path/to/git_repo')
+#             origin = repo.remotes.origin
 
 
 if __name__ == '__main__':

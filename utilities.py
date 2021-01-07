@@ -28,29 +28,11 @@ def make_link_to_get_code(redirect_url):
         "response_type": "code",
         "client_id": os.environ.get('STRAVA_CLIENT_ID'),
         "scope": "read,activity:write,activity:read_all",
-        "approval_prompt": "force",  # auto
+        "approval_prompt": "auto",  # force
         "redirect_uri": redirect_url
     }
     values_url = urllib.parse.urlencode(params_oauth)
     return 'https://www.strava.com/oauth/authorize?' + values_url
-
-
-def subscribe_webhooks(callback_url):
-    """Make subscription for application. This single subscription will allow the application to
-    receive webhook events for all supported changes to data owned by athletes that have authorized that application.
-
-    :param callback_url: address where webhook events will be sent
-    :return:
-    """
-    params_subs = {
-        'client_id': os.environ.get('STRAVA_CLIENT_ID'),
-        'client_secret': os.environ.get('STRAVA_CLIENT_SECRET'),
-        'callback_url': callback_url,
-        'verify_token': os.environ.get('STRAVA_WEBHOOK_TOKEN')
-    }
-    url = 'https://www.strava.com/api/v3/push_subscriptions'
-    res = requests.post(url, data=params_subs)
-    return res
 
 
 def view_subscription():
@@ -64,6 +46,7 @@ def view_subscription():
     }
     resp = requests.get('https://www.strava.com/api/v3/push_subscriptions', data=payload)
     pprint(resp.json())
+    return resp
 
 
 def db_add_athlete(token):
