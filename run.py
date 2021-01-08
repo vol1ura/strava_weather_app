@@ -3,7 +3,7 @@ import os
 from pprint import pprint
 import utilities
 
-from flask import Flask, render_template, url_for, request, abort, make_response, g, flash, redirect
+from flask import Flask, render_template, url_for, request, abort, make_response
 from flask_restful import reqparse
 
 
@@ -53,7 +53,7 @@ def webhook():
         pprint(args)  # TODO remove after debugging
         return 'webhook ok', 200
     if request.method == 'GET':
-        if utilities.is_subscribed():
+        if utilities.is_app_subscribed():
             return 'You are already subscribed', 200
         req = request.values
         mode = req.get('hub.mode', '')
@@ -72,7 +72,7 @@ def webhook():
 
 @app.route('/admin/')
 def admin():
-    if utilities.is_subscribed():
+    if utilities.is_app_subscribed():
         return 'subscription is OK'
     else:
         return 'no subscription'

@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
+import manage_db
 import os
-from pprint import pprint
 import requests
 import time
 import urllib.parse
@@ -11,9 +11,11 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 
-def get_headers(user_id):
-    access_token = ''
-    return {'Authorization': f"Bearer {access_token}"}
+def get_headers(athlete_id):
+    tokens = manage_db.get_athlete(athlete_id)
+    tokens = update_tokens(tokens)
+    manage_db.add_athlete(tokens)
+    return {'Authorization': f"Bearer {tokens[1]}"}
 
 
 def get_tokens(code):
@@ -23,32 +25,31 @@ def get_tokens(code):
         "code": code,
         "grant_type": "authorization_code"
     }
-    token_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
-    print('resp', token_response)
-    return token_response
+    return requests.post("https://www.strava.com/oauth/token", data=params).json()
 
 
-def check_token(token_expiration, refresh_token):
+def update_tokens(tokens):
     client_id = os.environ.get('STRAVA_CLIENT_ID')
     client_secret = os.environ.get('STRAVA_CLIENT_SECRET')
-    if token_expiration < time.time():
+    if tokens[3] < time.time():
         params = {
             "client_id": client_id,
             "client_secret": client_secret,
-            "refresh_token": refresh_token,
+            "refresh_token": tokens[2],
             "grant_type": "refresh_token"
         }
         refresh_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
         try:
-            return refresh_response['access_token'], refresh_response['refresh_token'], refresh_response['expires_at']
+            return tokens[0], refresh_response['access_token'], \
+                   refresh_response['refresh_token'], refresh_response['expires_at']
         except KeyError:
             print('Token refresh is failed.')
-    exp_time = token_expiration - int(time.time())  # TODO remove this is only for debug
+    exp_time = tokens[3] - int(time.time())  # TODO remove this is only for debug
     hours = exp_time // 3600
     mins = (exp_time - 3600 * hours) // 60
     s = f"{hours}h " if hours != 0 else ""
     print(f"Token expires after {s}{mins} min")
-    return '', token_expiration, refresh_token
+    return tokens
 
 
 def make_link_to_get_code(redirect_url):
@@ -63,7 +64,7 @@ def make_link_to_get_code(redirect_url):
     return 'https://www.strava.com/oauth/authorize?' + values_url
 
 
-def is_subscribed():
+def is_app_subscribed():
     """A GET request to the push subscription endpoint to check Strava Webhook status of APP.
 
     :return: boolean
@@ -121,12 +122,12 @@ def add_weather(athlete_id, activity_id, lan='en'):
     activity = get_activity(athlete_id, activity_id)
     if activity['manual']:
         print(f"Activity with ID{activity_id} is manual created. Can't add weather info for it.")
-        return
+        return 3  # code 3 - ok, but no processing
     description = activity.get('description', '')
     description = '' if description is None else description
     if ('Погода:' in description) or ('Weather:' in description):
         print(f'Weather description for activity ID{activity_id} is already set.')
-        return
+        return 3
     try:
         lat = activity['start_latitude']
         lon = activity['start_longitude']
@@ -137,6 +138,7 @@ def add_weather(athlete_id, activity_id, lan='en'):
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
+        print(f'bad data format for activity ID{activity_id}')  # TODO: remove after debugging
         start_time = int(time.time()) - 3 * 3600
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"

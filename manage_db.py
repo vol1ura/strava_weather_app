@@ -3,13 +3,15 @@ import os
 import sqlite3
 
 
-def get_athlete_data(cur, athlete_id):
-    return
+def get_athlete(athlete_id):
+    with sqlite3.connect(get_base_path()) as conn:
+        cur = conn. cursor()
+        return cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
 
 
 def get_base_path():
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(BASE_DIR, os.environ.get('DATABASE'))
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_dir, os.environ.get('DATABASE'))
 
 
 def add_athlete(data):
@@ -26,10 +28,10 @@ def add_athlete(data):
         return True
 
 
-def delete_athlete(id):
+def delete_athlete(athlete_id):
     with sqlite3.connect(get_base_path()) as conn:
         cur = conn.cursor()
-        cur.execute(f'DELETE * FROM subscribers WHERE id = {id};')
+        cur.execute(f'DELETE * FROM subscribers WHERE id = {athlete_id};')
         conn.commit()
 
 
@@ -45,9 +47,9 @@ if __name__ == '__main__':
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path)
 
-    # create_db()
-    tok = {'token_type': 'Bearer', 'expires_at': 1610123457, 'expires_in': 7431,
-           'refresh_token': '393ab0db081334a3909a05b99947df6566c631ef',
-           'access_token': '295e2287e1c3a3ad7db6aafbcec608ba407f8b82',
-           'athlete': {'id': 2843469}}
-    add_athlete(tok)
+    # create_db()  # TODO remove after debugging
+    # tok = {'token_type': 'Bearer', 'expires_at': 1610123457, 'expires_in': 7431,
+    #        'refresh_token': '393ab0db081334a3909a05b99947df6566c631ef',
+    #        'access_token': '295e2287e1c3a3ad7db6aafbcec608ba407f8b82',
+    #        'athlete': {'id': 2843469}}
+    # add_athlete(tok)
