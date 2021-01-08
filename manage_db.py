@@ -10,9 +10,9 @@ def get_athlete(athlete_id):
 
 
 def get_base_path():
-    print('cwd:', os.getcwd())
     base_dir = os.path.dirname(os.path.abspath(__file__))
     db_path = os.path.join(base_dir, os.environ.get('DATABASE'))
+    print('cwd:', os.getcwd())
     print('db_path:', db_path)
     return db_path
 
@@ -50,9 +50,4 @@ if __name__ == '__main__':
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path)
 
-    create_db()  # TODO remove after debugging
-    # tok = {'token_type': 'Bearer', 'expires_at': 1610123457, 'expires_in': 7431,
-    #        'refresh_token': '393ab0db081334a3909a05b99947df6566c631ef',
-    #        'access_token': '295e2287e1c3a3ad7db6aafbcec608ba407f8b82',
-    #        'athlete': {'id': 2843469}}
-    # add_athlete(tok)
+    create_db()
