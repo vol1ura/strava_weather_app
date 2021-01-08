@@ -1,6 +1,7 @@
 from dotenv import load_dotenv
 import os
 import sqlite3
+from run import app
 
 
 def get_athlete(athlete_id):
@@ -10,10 +11,11 @@ def get_athlete(athlete_id):
 
 
 def get_base_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    db_path = os.path.join(base_dir, os.environ.get('DATABASE'))
+    # base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(app.root_path, os.environ.get('DATABASE'))
     print('cwd:', os.getcwd())
     print('db_path:', db_path)
+    print('app:', app.root_path)
     return db_path
 
 
