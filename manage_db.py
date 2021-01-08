@@ -10,9 +10,11 @@ def get_athlete(athlete_id):
 
 
 def get_base_path():
-    return os.environ.get('DATABASE')
-    # base_dir = os.path.dirname(os.path.abspath(__file__))
-    # return os.path.join(base_dir, os.environ.get('DATABASE'))
+    print('cwd:', os.getcwd())
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    db_path = os.path.join(base_dir, os.environ.get('DATABASE'))
+    print('db_path:', db_path)
+    return db_path
 
 
 def add_athlete(data):
