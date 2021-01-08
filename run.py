@@ -3,7 +3,7 @@ import os
 from pprint import pprint
 import utilities
 
-from flask import Flask, render_template, url_for, request, abort, make_response, g
+from flask import Flask, render_template, url_for, request, abort, make_response, g, flash, redirect
 from flask_restful import reqparse
 
 
@@ -21,17 +21,17 @@ def index():
 def auth():
     code = request.values.get('code', None)
     if not code:
-        abort(500)
-    token_response = utilities.get_tokens(code)
+        return abort(500)
+    tokens = utilities.get_tokens(code)
     try:
-        athlete = token_response['athlete']['firstname'] + ' ' + token_response['athlete']['lastname']
-        db = get_db()
-        dbase = manage_db.FDataBase(db)
-        manage_db.add_athlete_db(token_response)
+        athlete = tokens['athlete']['firstname'] + ' ' + tokens['athlete']['lastname']
+        data = (tokens['athlete']['id'], tokens['access_token'], tokens['refresh_token'], tokens['expires_at'])
     except KeyError:
-        abort(500)
-    else:
+        return abort(500)
+    if manage_db.add_athlete(data):
         return render_template('authorized.html', athlete=athlete)
+    else:
+        return abort(500)
 
 
 @app.route('/webhook', methods=['GET', 'POST'])
@@ -49,10 +49,9 @@ def webhook():
             # Make operation
             utilities.add_weather(args['owner_id'], args['object_id'], lan='ru')
         if not args['updates'].get('authorized', True):
-            # remove athlete from DB
-            pass
-        pprint(args)
-        return 'get webhook', 200
+            manage_db.delete_athlete(args['owner_id'])
+        pprint(args)  # TODO remove after debugging
+        return 'webhook ok', 200
     if request.method == 'GET':
         if utilities.is_subscribed():
             return 'You are already subscribed', 200
@@ -97,20 +96,6 @@ def http_404_handler(error):
 @app.errorhandler(500)
 def http_500_handler(error):
     return render_template('500.html'), 500
-
-
-def get_db():
-    """ Create link to database if it doesn't exists"""
-    if not hasattr(g, 'link_db'):
-        g.link_db = manage_db.connect_db()
-    return g.link_db
-
-
-@app.teardown_appcontext
-def close_db(error):
-    """Close database when after closing context"""
-    if hasattr(g, 'link_db'):
-        g.link_db.close()
 
 
 if __name__ == '__main__':

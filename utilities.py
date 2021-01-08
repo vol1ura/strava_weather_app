@@ -24,15 +24,13 @@ def get_tokens(code):
         "grant_type": "authorization_code"
     }
     token_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
-    print('resp', token_response)  # TODO save to database
+    print('resp', token_response)
     return token_response
 
 
-def check_token(token):
+def check_token(token_expiration, refresh_token):
     client_id = os.environ.get('STRAVA_CLIENT_ID')
     client_secret = os.environ.get('STRAVA_CLIENT_SECRET')
-    token_expiration = token['token_expiration']
-    refresh_token = token['refresh_token']
     if token_expiration < time.time():
         params = {
             "client_id": client_id,
@@ -42,20 +40,15 @@ def check_token(token):
         }
         refresh_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
         try:
-            refresh_token = refresh_response['refresh_token']
-            access_token = refresh_response['access_token']
-            token_expiration = refresh_response['expires_at']
-            # TODO: return token
+            return refresh_response['access_token'], refresh_response['refresh_token'], refresh_response['expires_at']
         except KeyError:
             print('Token refresh is failed.')
-            return False
-        print('Token was successfully refreshed.')
     exp_time = token_expiration - int(time.time())  # TODO remove this is only for debug
     hours = exp_time // 3600
     mins = (exp_time - 3600 * hours) // 60
     s = f"{hours}h " if hours != 0 else ""
     print(f"Token expires after {s}{mins} min")
-    return True
+    return '', token_expiration, refresh_token
 
 
 def make_link_to_get_code(redirect_url):
@@ -71,8 +64,7 @@ def make_link_to_get_code(redirect_url):
 
 
 def is_subscribed():
-    """A GET request to the push subscription endpoint is used to check
-    Strava Webhook status.
+    """A GET request to the push subscription endpoint to check Strava Webhook status of APP.
 
     :return: boolean
     """
@@ -84,29 +76,29 @@ def is_subscribed():
     return response.ok and 'id' in response.json()[0]
 
 
-def get_activity(user_id, activity_id):
+def get_activity(athlete_id, activity_id):
     """Get information about activity
 
-    :param user_id: integer Strava athlete ID
+    :param athlete_id: integer Strava athlete ID
     :param activity_id: integer or string is a number
     :return: dictionary with activity data
     """
     url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.get(url, headers=get_headers(user_id)).json()
+    return requests.get(url, headers=get_headers(athlete_id)).json()
 
 
-def modify_activity(user_id, activity_id, payload: dict):
+def modify_activity(athlete_id, activity_id, payload: dict):
     """
     Method can change UpdatableActivity parameters such that description, name, type, gear_id.
     See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
 
-    :param user_id: integer Strava athlete ID
+    :param athlete_id: integer Strava athlete ID
     :param activity_id: integer Strava activity ID
     :param payload: dictionary with keys description, name, type, gear_id, trainer, commute
     :return: dictionary with updated activity parameters
     """
     url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.put(url, headers=get_headers(user_id), data=payload).json()
+    return requests.put(url, headers=get_headers(athlete_id), data=payload).json()
 
 
 def compass_direction(degree: int, lan='en') -> str:
@@ -117,16 +109,16 @@ def compass_direction(degree: int, lan='en') -> str:
     return compass_arr[lan][int((degree % 360) / 22.5 + 0.5)]
 
 
-def add_weather(user_id, activity_id, lan='en'):
+def add_weather(athlete_id, activity_id, lan='en'):
     """Add weather conditions to description of Strava activity
 
-    :param user_id: integer Strava athlete ID
+    :param athlete_id: integer Strava athlete ID
     :param activity_id: Strava activity ID
     :param lan: language 'ru' or 'en' by default
     :return:
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
-    activity = get_activity(user_id, activity_id)
+    activity = get_activity(athlete_id, activity_id)
     if activity['manual']:
         print(f"Activity with ID{activity_id} is manual created. Can't add weather info for it.")
         return
@@ -135,10 +127,17 @@ def add_weather(user_id, activity_id, lan='en'):
     if ('Погода:' in description) or ('Weather:' in description):
         print(f'Weather description for activity ID{activity_id} is already set.')
         return
-    lat = activity.get('start_latitude', 55.75222)  # Moscow latitude default
-    lon = activity.get('start_longitude', 37.61556)  # Moscow longitude default
-    time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
-    start_time = int(time.mktime(time_tuple))
+    try:
+        lat = activity['start_latitude']
+        lon = activity['start_longitude']
+    except KeyError:
+        lat = 55.75222  # Moscow latitude default
+        lon = 37.61556  # Moscow longitude default
+    try:
+        time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
+        start_time = int(time.mktime(time_tuple))
+    except (KeyError, ValueError):
+        start_time = int(time.time()) - 3 * 3600
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
     w = requests.get(base_url).json()['current']
@@ -157,5 +156,4 @@ def add_weather(user_id, activity_id, lan='en'):
                    f"{trnsl[lan][2]} {w['humidity']}%, {trnsl[lan][3]} {w['wind_speed']:.1f}{trnsl[lan][4]} " \
                    f"({trnsl[lan][5]} {compass_direction(w['wind_deg'], lan)}), {w['weather'][0]['description']}.\n"
     payload = {'description': weather_desc + air_conditions + description}
-    url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.put(url, headers=get_headers(user_id), data=payload).json()
+    return modify_activity(athlete_id, activity_id, payload)

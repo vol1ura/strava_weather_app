@@ -1,46 +1,53 @@
+from dotenv import load_dotenv
 import os
 import sqlite3
 
 
-class FDataBase:
-    def __init__(self, db):
-        self.__db = db
-        self.__cur = db.cursor()
-
-    def add_athlete_db(self, token):
-        pass
-
-    def get_token(self, user_id):
-        sql = f'''SELECT * FROM subscribers WHERE id = {user_id}'''
-        try:
-            self.__cur.execute(sql)
-            res = self.__cur.fetchall()
-            if res:
-                return res
-        except:
-            print('Read DB failed')
-            return []
-
-    def save_token(self, user_id, token):
-        sql = f''''''
-        try:
-            self.__cur.execute(sql)
-            return 0
-        except:
-            print('Write DB failed')
-            return 1
+def get_athlete_data(cur, athlete_id):
+    return
 
 
-def connect_db():
-    conn = sqlite3.connect(os.environ.get('DATABASE'))
-    conn.row_factory = sqlite3.Row
-    return conn
+def get_base_path():
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(BASE_DIR, os.environ.get('DATABASE'))
+
+
+def add_athlete(data):
+    with sqlite3.connect(get_base_path()) as conn:
+        cur = conn.cursor()
+        record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = {data[0]};').fetchone()
+        if not record_db:
+            sql = f'INSERT INTO subscribers VALUES(?, ?, ?, ?);'
+            cur.execute(sql, data)
+        elif data[1] != record_db[1]:
+            sql = f'UPDATE subscribers SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = {data[0]}'
+            cur.execute(sql, data[1:])
+        conn.commit()
+        return True
+
+
+def delete_athlete(id):
+    with sqlite3.connect(get_base_path()) as conn:
+        cur = conn.cursor()
+        cur.execute(f'DELETE * FROM subscribers WHERE id = {id};')
+        conn.commit()
+
+
+def create_db():
+    """Initial function for database creation"""
+    with sqlite3.connect(get_base_path()) as conn, open('sql_db.sql', 'r') as f:
+        conn.cursor().executescript(f.read())
+        conn.commit()
 
 
 if __name__ == '__main__':
-    def create_db():
-        db = connect_db()
-        with open('sql_db.sql', 'r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-        db.close()
+    dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
+    if os.path.exists(dotenv_path):
+        load_dotenv(dotenv_path)
+
+    # create_db()
+    tok = {'token_type': 'Bearer', 'expires_at': 1610123457, 'expires_in': 7431,
+           'refresh_token': '393ab0db081334a3909a05b99947df6566c631ef',
+           'access_token': '295e2287e1c3a3ad7db6aafbcec608ba407f8b82',
+           'athlete': {'id': 2843469}}
+    add_athlete(tok)
