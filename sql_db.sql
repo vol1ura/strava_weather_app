@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS subscribers;
+
 CREATE TABLE IF NOT EXISTS subscribers (
     id integer NOT NULL PRIMARY KEY,
     access_token text NOT NULL,

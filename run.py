@@ -1,4 +1,3 @@
-import manage_db
 import os
 from pprint import pprint
 import utilities
@@ -9,11 +8,19 @@ from flask_restful import reqparse
 
 app = Flask(__name__)
 
+import manage_db
+app.config.from_mapping(
+        SECRET_KEY=os.environ.get('SECRET_KEY'),
+        DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE')),
+    )
+manage_db.init_app(app)
+
 
 @app.route('/')
 def index():
     redirect_uri = url_for('auth', _external=True)
     url_to_get_code = utilities.make_link_to_get_code(redirect_uri)
+    print('app_path:', app.root_path)
     return render_template('index.html', url_to_get_code=url_to_get_code)
 
 
