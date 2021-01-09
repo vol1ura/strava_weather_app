@@ -37,7 +37,7 @@ def add_athlete(data):
 def delete_athlete(athlete_id):
     db = get_db()
     cur = db.cursor()
-    cur.execute(f'DELETE * FROM subscribers WHERE id = {athlete_id};')
+    cur.execute(f'DELETE FROM subscribers WHERE id = {athlete_id};')
     db.commit()
 
 

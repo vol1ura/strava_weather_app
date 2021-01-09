@@ -37,7 +37,7 @@ def auth():
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'POST':
-        print('POST request:')
+        print('POST request:', request.values)
         parser = reqparse.RequestParser()
         parser.add_argument('owner_id', type=int, required=True)  # athlete's ID
         parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
@@ -47,7 +47,7 @@ def webhook():
         args = parser.parse_args()
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
             utilities.add_weather(args['owner_id'], args['object_id'], lan='ru')
-        if not args['updates'].get('authorized', True):
+        if args['updates'].get('authorized', '') == 'false':
             manage_db.delete_athlete(args['owner_id'])
         pprint(args)  # TODO remove after debugging
         return 'webhook ok', 200

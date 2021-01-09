@@ -1,5 +1,9 @@
+# ===== files =====
 *.dat
 *.env
 *.db
+*.http
+# == directories ==
 __pycache__/
 .idea/
+venv/
