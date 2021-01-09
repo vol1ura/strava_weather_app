@@ -9,7 +9,6 @@ from flask.cli import with_appcontext
 
 def get_db():
     if 'db' not in g:
-        print(current_app.config['DATABASE'])
         g.db = sqlite3.connect(current_app.config['DATABASE'], detect_types=sqlite3.PARSE_DECLTYPES)
         g.db.row_factory = sqlite3.Row
     return g.db
@@ -19,14 +18,6 @@ def get_athlete(athlete_id):
     db = get_db()
     cur = db.cursor()
     return cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
-
-
-# def get_base_path():
-#     base_dir = os.path.dirname(os.path.abspath(__file__))
-#     db_path = os.path.join(base_dir, os.environ.get('DATABASE'))
-#     print('cwd:', os.getcwd())
-#     print('db_path:', db_path)
-#     return db_path
 
 
 def add_athlete(data):
