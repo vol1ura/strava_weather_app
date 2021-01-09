@@ -99,7 +99,7 @@ def modify_activity(athlete_id, activity_id, payload: dict):
     :return: dictionary with updated activity parameters
     """
     url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.put(url, headers=get_headers(athlete_id), data=payload).json()
+    return requests.put(url, headers=get_headers(athlete_id), data=payload)
 
 
 def compass_direction(degree: int, lan='en') -> str:
@@ -116,7 +116,7 @@ def add_weather(athlete_id, activity_id, lan='en'):
     :param athlete_id: integer Strava athlete ID
     :param activity_id: Strava activity ID
     :param lan: language 'ru' or 'en' by default
-    :return:
+    :return: status code
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     activity = get_activity(athlete_id, activity_id)
@@ -138,7 +138,7 @@ def add_weather(athlete_id, activity_id, lan='en'):
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
-        print(f'bad data format for activity ID{activity_id}')  # TODO: remove after debugging
+        print(f'Bad data format for activity ID{activity_id}. Use current time.')  # TODO: remove after debugging
         start_time = int(time.time()) - 3 * 3600
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
@@ -158,4 +158,6 @@ def add_weather(athlete_id, activity_id, lan='en'):
                    f"{trnsl[lan][2]} {w['humidity']}%, {trnsl[lan][3]} {w['wind_speed']:.1f}{trnsl[lan][4]} " \
                    f"({trnsl[lan][5]} {compass_direction(w['wind_deg'], lan)}), {w['weather'][0]['description']}.\n"
     payload = {'description': weather_desc + air_conditions + description}
-    return modify_activity(athlete_id, activity_id, payload)
+    result = modify_activity(athlete_id, activity_id, payload)
+    if result.ok:
+        return 0
