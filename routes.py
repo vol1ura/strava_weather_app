@@ -37,7 +37,7 @@ def auth():
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'POST':
-        print('POST request:', request.values)
+        print('POST request:', request.remote_addr)
         parser = reqparse.RequestParser()
         parser.add_argument('owner_id', type=int, required=True)  # athlete's ID
         parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
