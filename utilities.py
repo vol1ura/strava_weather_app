@@ -74,7 +74,7 @@ def is_app_subscribed():
         'client_secret': os.environ.get('STRAVA_CLIENT_SECRET')
     }
     response = requests.get('https://www.strava.com/api/v3/push_subscriptions', data=payload)
-    return response.ok and 'id' in response.json()[0]
+    return response.ok and 'id' in response.json()
 
 
 def get_activity(athlete_id, activity_id):
