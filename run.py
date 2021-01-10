@@ -6,9 +6,9 @@ app = Flask(__name__)
 from routes import *
 import manage_db
 app.config.from_mapping(
-        SECRET_KEY=os.environ.get('SECRET_KEY'),
-        DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE')),
-    )
+    SECRET_KEY=os.environ.get('SECRET_KEY'),
+    DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE'))
+)
 manage_db.init_app(app)
 
 

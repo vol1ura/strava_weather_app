@@ -148,13 +148,13 @@ def add_weather(athlete_id, activity_id, lan='en'):
     w = requests.get(base_url).json()['current']
     base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
                f"lat={lat}&lon={lon}&appid={weather_api_key}"
-    aq = requests.get(base_url).json()
-    print(aq)
-    print(start_time + 7200 > aq['list'][0]['dt'])  # TODO: remove after debugging
-    air_conditions = f"Воздух: {aq['list'][0]['components']['so2']}(PM2.5), " \
-                     f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
-                     f"{aq['list'][0]['components']['nh3']}(NH₃).\n"
-    print(air_conditions)
+    aq = requests.get(base_url).json()  # it gives only current AQ and appropriate only if activity synced not too late
+    if start_time + activity['elapsed_time'] + 9999 > aq['list'][0]['dt']:  # Add air quality only if time appropriate!
+        air_conditions = f"Воздух: {aq['list'][0]['components']['so2']}(PM2.5), " \
+                         f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
+                         f"{aq['list'][0]['components']['nh3']}(NH₃).\n"
+    else:
+        air_conditions = ''
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
     weather_desc = f"{trnsl[lan][0]}: {w['temp']:.1f}°C ({trnsl[lan][1]} {w['feels_like']:.0f}°C), " \
@@ -162,5 +162,4 @@ def add_weather(athlete_id, activity_id, lan='en'):
                    f"({trnsl[lan][5]} {compass_direction(w['wind_deg'], lan)}), {w['weather'][0]['description']}.\n"
     payload = {'description': weather_desc + air_conditions + description}
     result = modify_activity(athlete_id, activity_id, payload)
-    if result.ok:
-        return 0
+    return 0 if result.ok else 1
