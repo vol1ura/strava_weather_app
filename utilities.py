@@ -113,7 +113,13 @@ def compass_direction(degree: int, lan='en') -> str:
     return compass_arr[lan][int((degree % 360) / 22.5 + 0.5)]
 
 
-def add_weather(athlete_id, activity_id, lan='en'):
+def aq_grade(aqi: int, lan='en') -> str:
+    aq_qrade_description = {'ru': ["отл.", "норм.", "средн.", "плохой", "ужасн."],
+                            'en': ["good", "fair", "moderate", "poor", "very poor"]}
+    return aq_qrade_description[lan][aqi - 1]
+
+
+def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into two: get_weather and add_description
     """Add weather conditions to description of Strava activity
 
     :param athlete_id: integer Strava athlete ID
@@ -149,8 +155,10 @@ def add_weather(athlete_id, activity_id, lan='en'):
     base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
                f"lat={lat}&lon={lon}&appid={weather_api_key}"
     aq = requests.get(base_url).json()  # it gives only current AQ and appropriate only if activity synced not too late
-    if start_time + activity['elapsed_time'] + 9999 > aq['list'][0]['dt']:  # Add air quality only if time appropriate!
-        air_conditions = f"Воздух: {aq['list'][0]['components']['so2']}(PM2.5), " \
+    if start_time + activity['elapsed_time'] + 7200 > aq['list'][0]['dt']:  # Add air quality only if time appropriate!
+        aqi = aq['list'][0]['main']['aqi']
+        air = {'ru': 'Воздух', 'en': 'Air'}
+        air_conditions = f"{air[lan]} ({aq_grade(aqi, lan)}): {aq['list'][0]['components']['so2']}(PM2.5), " \
                          f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
                          f"{aq['list'][0]['components']['nh3']}(NH₃).\n"
     else:
