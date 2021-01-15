@@ -160,8 +160,8 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
         air_conditions = ''
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
-    weather_desc = f"{trnsl[lan][0]}: {w['temp']:.1f}°C ({trnsl[lan][1]} {w['feels_like']:.0f}°C), " \
-                   f"{trnsl[lan][2]} {w['humidity']}%, {trnsl[lan][3]} {w['wind_speed']:.1f}{trnsl[lan][4]} " \
+    weather_desc = f"{trnsl[lan][0]}: 🌡 {w['temp']:.1f}°C ({trnsl[lan][1]} {w['feels_like']:.0f}°C), " \
+                   f"💦 {w['humidity']}%, 💨 {w['wind_speed']:.1f}{trnsl[lan][4]} " \
                    f"({trnsl[lan][5]} {compass_direction(w['wind_deg'], lan)}), {w['weather'][0]['description']}.\n"
     payload = {'description': weather_desc + air_conditions + description}
     result = modify_activity(athlete_id, activity_id, payload)
