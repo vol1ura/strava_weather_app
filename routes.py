@@ -1,12 +1,12 @@
 import os
 from pprint import pprint
 
+from flask import render_template, url_for, request, abort, make_response
+from flask_restful import reqparse
+
 import manage_db
 import utilities
 from run import app
-
-from flask import render_template, url_for, request, abort, make_response
-from flask_restful import reqparse
 
 
 @app.route('/')

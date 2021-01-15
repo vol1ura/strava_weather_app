@@ -1,10 +1,11 @@
-from dotenv import load_dotenv
-import manage_db
 import os
-import requests
 import time
 import urllib.parse
 
+import requests
+from dotenv import load_dotenv
+
+import manage_db
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
 if os.path.exists(dotenv_path):
@@ -145,7 +146,11 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
         start_time = int(time.time()) - 3 * 3600
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
-    w = requests.get(base_url).json()['current']
+    try:
+        w = requests.get(base_url).json()['current']
+    except KeyError:
+        print(f'ERROR - {time.time()} - Fail to get weather, ({lat}, {lon}), T={start_time}')
+        return 1
     base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
                f"lat={lat}&lon={lon}&appid={weather_api_key}"
     aq = requests.get(base_url).json()  # it gives only current AQ and appropriate only if activity synced not too late
@@ -166,3 +171,17 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
     payload = {'description': weather_desc + air_conditions + description}
     result = modify_activity(athlete_id, activity_id, payload)
     return 0 if result.ok else 1
+
+
+# if __name__ == '__main__':
+    # asub = is_app_subscribed()
+    # print(asub)
+    # lan = 'ru'
+    # weather_api_key = os.environ.get('API_WEATHER_KEY')
+    # lat = 55.75222  # Moscow latitude default
+    # lon = 37.61556  # Moscow longitude default
+    # start_time = int(time.time()) - 6000
+    # base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+    #            f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
+    # w = requests.get(base_url).json()['current']
+    # pprint(w)
