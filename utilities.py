@@ -132,24 +132,20 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
     if ('Погода:' in description) or ('Weather:' in description):
         print(f'Weather description for activity ID{activity_id} is already set.')
         return 3
-    try:
-        lat = activity['start_latitude']
-        lon = activity['start_longitude']
-    except KeyError:
-        lat = 55.75222  # Moscow latitude default
-        lon = 37.61556  # Moscow longitude default
+    lat = activity.get('start_latitude', None)
+    lon = activity.get('start_longitude', None)
     try:
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
-        print(f'Bad data format for activity ID{activity_id}. Use current time.')  # TODO: remove after debugging
+        print(f'ERROR - {time.time()} - Bad data format for activity ID{activity_id}. Use current time.')
         start_time = int(time.time()) - 3 * 3600
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
-    try:
+    if lat and lon:
         w = requests.get(base_url).json()['current']
-    except KeyError:
-        print(f'ERROR - {time.time()} - Fail to get weather, ({lat}, {lon}), T={start_time}')
+    else:
+        print(f'WARNING - {time.time()} - No geo position for ID{activity_id}, ({lat}, {lon}), T={start_time}')
         return 1
     base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
                f"lat={lat}&lon={lon}&appid={weather_api_key}"
