@@ -124,9 +124,13 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     activity = get_activity(athlete_id, activity_id)
-    if activity['manual']:
-        print(f"Activity with ID{activity_id} is manual created. Can't add weather info for it.")
-        return 3  # code 3 - ok, but no processing
+    try:
+        if activity['manual']:
+            print(f"Activity with ID{activity_id} is manual created. Can't add weather info for it.")
+            return 3  # code 3 - ok, but no processing
+    except KeyError:
+        print(f'ERROR: - {time.time()} - No manual key for activity ID{activity_id}, athlete ID{athlete_id}')
+        return 1  # code 1 - error
     description = activity.get('description', '')
     description = '' if description is None else description
     if ('Погода:' in description) or ('Weather:' in description):

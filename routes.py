@@ -45,11 +45,11 @@ def webhook():
         parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
         parser.add_argument('updates', type=dict, required=True)  # For deauth, there is {"authorized": "false"}
         args = parser.parse_args()
+        pprint(args)  # TODO remove after debugging
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
             utilities.add_weather(args['owner_id'], args['object_id'], lan='ru')
         if args['updates'].get('authorized', '') == 'false':
             manage_db.delete_athlete(args['owner_id'])
-        pprint(args)  # TODO remove after debugging
         return 'webhook ok', 200
     if request.method == 'GET':
         if utilities.is_app_subscribed():
