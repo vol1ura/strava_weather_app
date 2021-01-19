@@ -45,15 +45,10 @@ def update_tokens(tokens):
                    refresh_response['refresh_token'], refresh_response['expires_at']
         except KeyError:
             print('Token refresh is failed.')
-    exp_time = tokens[3] - int(time.time())  # TODO remove this is only for debug
-    hours = exp_time // 3600
-    mins = (exp_time - 3600 * hours) // 60
-    s = f"{hours}h " if hours != 0 else ""
-    print(f"Token expires after {s}{mins} min")
     return tokens
 
 
-def make_link_to_get_code(redirect_url):
+def make_link_to_get_code(redirect_url) -> str:
     params_oauth = {
         "response_type": "code",
         "client_id": os.environ.get('STRAVA_CLIENT_ID'),
@@ -65,7 +60,7 @@ def make_link_to_get_code(redirect_url):
     return 'https://www.strava.com/oauth/authorize?' + values_url
 
 
-def is_app_subscribed():
+def is_app_subscribed() -> bool:
     """A GET request to the push subscription endpoint to check Strava Webhook status of APP.
 
     :return: boolean
@@ -135,7 +130,7 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
     description = '' if description is None else description
     if ('Погода:' in description) or ('Weather:' in description):
         print(f'Weather description for activity ID{activity_id} is already set.')
-        return 3
+        return 3  # code 3 - ok, but no processing
     lat = activity.get('start_latitude', None)
     lon = activity.get('start_longitude', None)
     try:
@@ -150,7 +145,7 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
         w = requests.get(base_url).json()['current']
     else:
         print(f'WARNING - {time.time()} - No geo position for ID{activity_id}, ({lat}, {lon}), T={start_time}')
-        return 1
+        return 3  # code 3 - ok, but no processing
     base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
                f"lat={lat}&lon={lon}&appid={weather_api_key}"
     aq = requests.get(base_url).json()  # it gives only current AQ and appropriate only if activity synced not too late
@@ -165,8 +160,8 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
         air_conditions = ''
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
-    weather_desc = f"{trnsl[lan][0]}: 🌡 {w['temp']:.1f}°C ({trnsl[lan][1]} {w['feels_like']:.0f}°C), " \
-                   f"💦 {w['humidity']}%, 💨 {w['wind_speed']:.1f}{trnsl[lan][4]} " \
+    weather_desc = f"{trnsl[lan][0]}: 🌡\xa0{w['temp']:.1f}°C ({trnsl[lan][1]} {w['feels_like']:.0f}°C), " \
+                   f"💦\xa0{w['humidity']}%, 💨\xa0{w['wind_speed']:.1f}{trnsl[lan][4]} " \
                    f"({trnsl[lan][5]} {compass_direction(w['wind_deg'], lan)}), {w['weather'][0]['description']}.\n"
     payload = {'description': weather_desc + air_conditions + description}
     result = modify_activity(athlete_id, activity_id, payload)
