@@ -13,7 +13,6 @@ from run import app
 def index():
     redirect_uri = url_for('auth', _external=True)
     url_to_get_code = utilities.make_link_to_get_code(redirect_uri)
-    print('app_path:', app.root_path)
     return render_template('index.html', url_to_get_code=url_to_get_code)
 
 
@@ -37,7 +36,6 @@ def auth():
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'POST':
-        print('POST request:', request.remote_addr)
         parser = reqparse.RequestParser()
         parser.add_argument('owner_id', type=int, required=True)  # athlete's ID
         parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
