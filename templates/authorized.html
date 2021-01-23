@@ -15,5 +15,15 @@ Authorization OK
 
 {% block body %}
 <h2>Hello, {{ athlete }}!</h2>
-<p class="lead">App is connected to your Strava profile, you can close the window now.</p>
+<p class="lead">App is connected to your Strava profile, now you can select the metrics
+    to be added to your activities description</p>
+    <form>
+        <fieldset>
+            <legend>Select metrics:</legend>
+            <label for="humidity"><input type="checkbox" name="humidity"/> humidity,</label>
+            <label for="wind"><input type="checkbox" name="wind"/> wind,</label>
+            <label for="aqi"><input type="checkbox" name="aqi"/> air quality.</label><br>
+            <input type="submit" value="Save settings">
+        </fieldset>
+    </form>
 {% endblock %}
