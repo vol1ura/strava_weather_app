@@ -109,16 +109,16 @@ def compass_direction(degree: int, lan='en') -> str:
     return compass_arr[lan][int((degree % 360) / 22.5 + 0.5)]
 
 
-def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into two: get_weather and add_description
+def add_weather(athlete_id, activity_id):
     """Add weather conditions to description of Strava activity
 
     :param athlete_id: integer Strava athlete ID
     :param activity_id: Strava activity ID
-    :param lan: language 'ru' or 'en' by default
     :return: status code
     """
-    weather_api_key = os.environ.get('API_WEATHER_KEY')
     activity = get_activity(athlete_id, activity_id)
+
+    # Activity type checking. Skip processing if activity is manual.
     try:
         if activity['manual']:
             print(f"Activity with ID{activity_id} is manual created. Can't add weather info for it.")
@@ -126,46 +126,85 @@ def add_weather(athlete_id, activity_id, lan='en'):  # TODO split function into 
     except KeyError:
         print(f'ERROR: - {time.time()} - No manual key for activity ID{activity_id}, athlete ID{athlete_id}')
         return 1  # code 1 - error
+
+    # Description of activity checking. Don't format this activity if it contains a weather data.
     description = activity.get('description', '')
-    description = '' if description is None else description
+    description = '' if description is None else description.rstrip() + '\n'
     if ('Погода:' in description) or ('Weather:' in description):
         print(f'Weather description for activity ID{activity_id} is already set.')
         return 3  # code 3 - ok, but no processing
-    lat = activity.get('start_latitude', None)
-    lon = activity.get('start_longitude', None)
+
+    # Check starting time of activity. Convert time to integer Unix time, GMT
     try:
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
         print(f'ERROR - {time.time()} - Bad data format for activity ID{activity_id}. Use current time.')
-        start_time = int(time.time()) - 3 * 3600
-    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
-               f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
+        start_time = int(time.time()) - 3600  # if some problems with activity start time les's use time a hour ago
+
+    lat = activity.get('start_latitude', None)
+    lon = activity.get('start_longitude', None)
+
+    settings = manage_db.get_settings(athlete_id)
+
     if lat and lon:
-        w = requests.get(base_url).json()['current']
+        weather_description = get_weather_description(lat, lon, start_time, settings)
     else:
         print(f'WARNING - {time.time()} - No geo position for ID{activity_id}, ({lat}, {lon}), T={start_time}')
         return 3  # code 3 - ok, but no processing
-    base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
-               f"lat={lat}&lon={lon}&appid={weather_api_key}"
-    aq = requests.get(base_url).json()  # it gives only current AQ and appropriate only if activity synced not too late
-    if start_time + activity['elapsed_time'] + 7200 > aq['list'][0]['dt']:  # Add air quality only if time appropriate!
-        # Air Quality Index: 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor
-        aqi = ['😃', '🙂', '😐', '🙁', '😨'][aq['list'][0]['main']['aqi'] - 1]
-        air = {'ru': 'Воздух', 'en': 'Air'}
-        air_conditions = f"{air[lan]} {aqi} {aq['list'][0]['components']['so2']}(PM2.5), " \
-                         f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
-                         f"{aq['list'][0]['components']['nh3']}(NH₃).\n"
+
+    # Add air quality only if user set this option and time of activity uploading is appropriate!
+    if settings.aqi and (start_time + activity['elapsed_time'] + 7200 > time.time()):
+        air_conditions = get_air_description(lat, lon, settings.lan)
     else:
         air_conditions = ''
-    trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
-             'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
-    weather_desc = f"{trnsl[lan][0]}: 🌡\xa0{w['temp']:.1f}°C ({trnsl[lan][1]} {w['feels_like']:.0f}°C), " \
-                   f"💦\xa0{w['humidity']}%, 💨\xa0{w['wind_speed']:.1f}{trnsl[lan][4]} " \
-                   f"({trnsl[lan][5]} {compass_direction(w['wind_deg'], lan)}), {w['weather'][0]['description']}.\n"
-    payload = {'description': weather_desc + air_conditions + description}
+    payload = {'description': description + weather_description + air_conditions}
     result = modify_activity(athlete_id, activity_id, payload)
     return 0 if result.ok else 1
+
+
+def get_weather_description(lat, lon, w_time: int, s):
+    """Get weather data using https://openweathermap.org/ API.
+
+    :param lat: latitude
+    :param lon: longitude
+    :param w_time: time of requested weather data
+    :param s: settings as named tuple with hum, wind and lan fields
+    :return: dictionary with history weather data
+    """
+    weather_api_key = os.environ.get('API_WEATHER_KEY')
+    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+               f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang={s.lan}"
+    w = requests.get(base_url).json()['current']
+    trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
+             'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
+    description = f"{trnsl[s.lan][0]}: 🌡\xa0{w['temp']:.1f}°C ({trnsl[s.lan][1]} {w['feels_like']:.0f}°C), "
+    description += f"💦\xa0{w['humidity']}%, " if s.hum else ""
+    description += f"💨\xa0{w['wind_speed']:.1f}{trnsl[s.lan][4]} " \
+                   f"({trnsl[s.lan][5]} {compass_direction(w['wind_deg'], s.lan)}), " if s.wind else ""
+    description += f"{w['weather'][0]['description']}."
+    return description
+
+
+def get_air_description(lat, lon, lan='en'):
+    """Get air quality data using https://openweathermap.org/ API.
+    It gives only current AQ and appropriate only if activity synced not too late.
+
+    :param lat: latitude
+    :param lon: longitude
+    :param lan: language 'ru' or 'en' by default
+    :return: dictionary with air quality data
+    """
+    weather_api_key = os.environ.get('API_WEATHER_KEY')
+    base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
+               f"lat={lat}&lon={lon}&appid={weather_api_key}"
+    aq = requests.get(base_url).json()
+    # Air Quality Index: 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor
+    aqi = ['😃', '🙂', '😐', '🙁', '😨'][aq['list'][0]['main']['aqi'] - 1]
+    air = {'ru': 'Воздух', 'en': 'Air'}
+    return f"\n{air[lan]} {aqi} {aq['list'][0]['components']['so2']}(PM2.5), " \
+           f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
+           f"{aq['list'][0]['components']['nh3']}(NH₃)."
 
 
 # if __name__ == '__main__':

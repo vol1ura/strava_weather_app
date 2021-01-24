@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from collections import namedtuple
 
 import click
 from dotenv import load_dotenv
@@ -14,7 +15,7 @@ def get_db():
     return g.db
 
 
-def get_athlete(athlete_id):
+def get_athlete(athlete_id: int):
     db = get_db()
     cur = db.cursor()
     return cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
@@ -25,19 +26,49 @@ def add_athlete(data):
     cur = db.cursor()
     record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = {data[0]};').fetchone()
     if not record_db:
-        sql = f'INSERT INTO subscribers VALUES(?, ?, ?, ?);'
+        sql = 'INSERT INTO subscribers VALUES(?, ?, ?, ?);'
         cur.execute(sql, data)
     elif data[1] != record_db[1]:
-        sql = f'UPDATE subscribers SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = {data[0]}'
+        sql = f'UPDATE subscribers SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = {data[0]};'
         cur.execute(sql, data[1:])
+    else:
+        return True
     db.commit()
     return True
 
 
-def delete_athlete(athlete_id):
+def add_settings(athlete_id: int, hum: int, wind: int, aqi: int, lan: str):
+    db = get_db()
+    cur = db.cursor()
+    record_db = cur.execute(f'SELECT * FROM settings WHERE id = {athlete_id};').fetchone()
+    if not record_db:
+        sql = 'INSERT INTO settings VALUES(?, ?, ?, ?, ?);'
+        cur.execute(sql, (athlete_id, hum, wind, aqi, lan))
+    elif record_db[1] != hum or record_db[2] != wind or record_db[3] != aqi or record_db[4] != lan:
+        sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {athlete_id};'
+        cur.execute(sql, (hum, wind, aqi, lan))
+    else:
+        return True
+    db.commit()
+    return True
+
+
+def get_settings(athlete_id: int):
+    db = get_db()
+    cur = db.cursor()
+    sel = cur.execute(f'SELECT * FROM settings WHERE id = {athlete_id};').fetchone()
+    Settings = namedtuple('Settings', 'id hum wind aqi lan')
+    if sel:
+        return Settings(*sel)
+    else:
+        return Settings(athlete_id, 1, 1, 1, 'ru')
+
+
+def delete_athlete(athlete_id: int):
     db = get_db()
     cur = db.cursor()
     cur.execute(f'DELETE FROM subscribers WHERE id = {athlete_id};')
+    cur.execute(f'DELETE FROM settings WHERE id = {athlete_id};')
     db.commit()
 
 
@@ -71,4 +102,3 @@ if __name__ == '__main__':
     dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path)
-

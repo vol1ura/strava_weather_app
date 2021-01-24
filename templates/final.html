@@ -1,0 +1,18 @@
+{% extends "template.html" %}
+
+{% block title %}Success!!!{% endblock %}
+
+{% block maintitle %}
+    The application is fully configured
+{% endblock %}
+
+{% block nav %}
+    <a class="nav-link" href="/">Home</a>
+    <a class="nav-link" href="/features/">Features</a>
+    <a class="nav-link" href="/contacts/">Contact</a>
+{% endblock %}
+
+{% block body %}
+    <p class="lead">Great, {{ athlete }}. Starting from the next workout, a description will be added.</p>
+    <p class="lead">You can close the window now.</p>
+{% endblock %}

@@ -1,7 +1,7 @@
 import os
 from pprint import pprint
 
-from flask import render_template, url_for, request, abort, make_response
+from flask import render_template, url_for, request, abort, make_response, redirect, session
 from flask_restful import reqparse
 
 import manage_db
@@ -16,7 +16,19 @@ def index():
     return render_template('index.html', url_to_get_code=url_to_get_code)
 
 
-@app.route('/authorization_successful', methods=['GET'])
+@app.route('/final/', methods=['POST'])
+def final():
+    if 'id' not in session:
+        return abort(500)
+    hum = 1 if 'humidity' in request.values else 0
+    wind = 1 if 'wind' in request.values else 0
+    aqi = 1 if 'aqi' in request.values else 0
+    lan = request.values.get('lan', 'ru')
+    manage_db.add_settings(session['id'], hum, wind, aqi, lan)
+    return render_template('final.html', athlete=session['athlete'])
+
+
+@app.route('/authorization_successful')
 def auth():
     code = request.values.get('code', None)
     if not code:
@@ -28,6 +40,8 @@ def auth():
     except KeyError:
         return abort(500)
     if manage_db.add_athlete(data):
+        session['athlete'] = athlete
+        session['id'] = tokens['athlete']['id']
         return render_template('authorized.html', athlete=athlete)
     else:
         return abort(500)
@@ -41,11 +55,11 @@ def webhook():
         parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
         parser.add_argument('object_id', type=int, required=True)  # activity's ID
         parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
-        parser.add_argument('updates', type=dict, required=True)  # For deauth, there is {"authorized": "false"}
+        parser.add_argument('updates', type=dict, required=True)  # For de-auth, there is {"authorized": "false"}
         args = parser.parse_args()
         pprint(args)  # TODO remove after debugging
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-            utilities.add_weather(args['owner_id'], args['object_id'], lan='ru')
+            utilities.add_weather(args['owner_id'], args['object_id'])
         if args['updates'].get('authorized', '') == 'false':
             manage_db.delete_athlete(args['owner_id'])
         return 'webhook ok', 200
@@ -88,6 +102,11 @@ def contacts():
 @app.errorhandler(404)
 def http_404_handler(error):
     return render_template('404.html'), 404
+
+
+@app.errorhandler(405)
+def http_405_handler(error):
+    return redirect(url_for('index')), 302
 
 
 @app.errorhandler(500)
