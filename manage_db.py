@@ -8,6 +8,10 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 
 
+Settings = namedtuple('Settings', 'id hum wind aqi lan')
+Tokens = namedtuple('Tokens', 'id access_token refresh_token expires_at')
+
+
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(current_app.config['DATABASE'], detect_types=sqlite3.PARSE_DECLTYPES)
@@ -18,46 +22,42 @@ def get_db():
 def get_athlete(athlete_id: int):
     db = get_db()
     cur = db.cursor()
-    return cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
+    record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
+    if record_db:
+        return Tokens(*record_db)
+    else:
+        return None
 
 
-def add_athlete(data):
+def add_athlete(tokens: Tokens):
+    tokens_db = get_athlete(tokens.id)
     db = get_db()
     cur = db.cursor()
-    record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = {data[0]};').fetchone()
-    if not record_db:
+    if not tokens_db:
         sql = 'INSERT INTO subscribers VALUES(?, ?, ?, ?);'
-        cur.execute(sql, data)
-    elif data[1] != record_db[1]:
-        sql = f'UPDATE subscribers SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = {data[0]};'
-        cur.execute(sql, data[1:])
+        cur.execute(sql, tokens)
+    elif tokens.access_token != tokens_db.access_token:
+        sql = f'UPDATE subscribers SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = {tokens.id};'
+        cur.execute(sql, tokens[1:])
     else:
-        return True
+        return
     db.commit()
-    return True
 
 
 def add_settings(athlete_id: int, hum: int, wind: int, aqi: int, lan: str):
-    db = get_db()
-    cur = db.cursor()
-    record_db = cur.execute(f'SELECT * FROM settings WHERE id = {athlete_id};').fetchone()
-    if not record_db:
-        sql = 'INSERT INTO settings VALUES(?, ?, ?, ?, ?);'
-        cur.execute(sql, (athlete_id, hum, wind, aqi, lan))
-    elif record_db[1] != hum or record_db[2] != wind or record_db[3] != aqi or record_db[4] != lan:
+    record_db = get_settings(athlete_id)
+    if record_db.hum != hum or record_db.wind != wind or record_db.aqi != aqi or record_db.lan != lan:
+        db = get_db()
+        cur = db.cursor()
         sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {athlete_id};'
         cur.execute(sql, (hum, wind, aqi, lan))
-    else:
-        return True
-    db.commit()
-    return True
+        db.commit()
 
 
 def get_settings(athlete_id: int):
     db = get_db()
     cur = db.cursor()
     sel = cur.execute(f'SELECT * FROM settings WHERE id = {athlete_id};').fetchone()
-    Settings = namedtuple('Settings', 'id hum wind aqi lan')
     if sel:
         return Settings(*sel)
     else:

@@ -12,11 +12,11 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 
-def get_headers(athlete_id):
+def get_headers(athlete_id: int):
     tokens = manage_db.get_athlete(athlete_id)
     tokens = update_tokens(tokens)
     manage_db.add_athlete(tokens)
-    return {'Authorization': f"Bearer {tokens[1]}"}
+    return {'Authorization': f"Bearer {tokens.access_token}"}
 
 
 def get_tokens(code):
@@ -48,7 +48,7 @@ def update_tokens(tokens):
     return tokens
 
 
-def make_link_to_get_code(redirect_url) -> str:
+def make_link_to_get_code(redirect_url: str) -> str:
     params_oauth = {
         "response_type": "code",
         "client_id": os.environ.get('STRAVA_CLIENT_ID'),
@@ -76,7 +76,7 @@ def is_app_subscribed() -> bool:
         return False
 
 
-def get_activity(athlete_id, activity_id):
+def get_activity(athlete_id: int, activity_id: int):
     """Get information about activity
 
     :param athlete_id: integer Strava athlete ID
@@ -87,7 +87,7 @@ def get_activity(athlete_id, activity_id):
     return requests.get(url, headers=get_headers(athlete_id)).json()
 
 
-def modify_activity(athlete_id, activity_id, payload: dict):
+def modify_activity(athlete_id: int, activity_id: int, payload: dict):
     """
     Method can change UpdatableActivity parameters such that description, name, type, gear_id.
     See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
@@ -109,7 +109,7 @@ def compass_direction(degree: int, lan='en') -> str:
     return compass_arr[lan][int((degree % 360) / 22.5 + 0.5)]
 
 
-def add_weather(athlete_id, activity_id):
+def add_weather(athlete_id: int, activity_id: int):
     """Add weather conditions to description of Strava activity
 
     :param athlete_id: integer Strava athlete ID
@@ -159,14 +159,14 @@ def add_weather(athlete_id, activity_id):
     return 0 if result.ok else 1
 
 
-def get_weather_description(lat, lon, w_time: int, s):
+def get_weather_description(lat, lon, w_time: int, s) -> str:
     """Get weather data using https://openweathermap.org/ API.
 
     :param lat: latitude
     :param lon: longitude
     :param w_time: time of requested weather data
     :param s: settings as named tuple with hum, wind and lan fields
-    :return: dictionary with history weather data
+    :return: string with history weather data
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
@@ -182,14 +182,14 @@ def get_weather_description(lat, lon, w_time: int, s):
     return description
 
 
-def get_air_description(lat, lon, lan='en'):
+def get_air_description(lat, lon, lan='en') -> str:
     """Get air quality data using https://openweathermap.org/ API.
     It gives only current AQ and appropriate only if activity synced not too late.
 
     :param lat: latitude
     :param lon: longitude
     :param lan: language 'ru' or 'en' by default
-    :return: dictionary with air quality data
+    :return: string with air quality data
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \

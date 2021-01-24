@@ -33,18 +33,17 @@ def auth():
     code = request.values.get('code', None)
     if not code:
         return abort(500)
-    tokens = utilities.get_tokens(code)
+    auth_data = utilities.get_tokens(code)
     try:
-        athlete = tokens['athlete']['firstname'] + ' ' + tokens['athlete']['lastname']
-        data = (tokens['athlete']['id'], tokens['access_token'], tokens['refresh_token'], tokens['expires_at'])
+        athlete = auth_data['athlete']['firstname'] + ' ' + auth_data['athlete']['lastname']
+        tokens = manage_db.Tokens(auth_data['athlete']['id'], auth_data['access_token'],
+                                  auth_data['refresh_token'], auth_data['expires_at'])
     except KeyError:
         return abort(500)
-    if manage_db.add_athlete(data):
-        session['athlete'] = athlete
-        session['id'] = tokens['athlete']['id']
-        return render_template('authorized.html', athlete=athlete)
-    else:
-        return abort(500)
+    manage_db.add_athlete(tokens)
+    session['athlete'] = athlete
+    session['id'] = tokens.id
+    return render_template('authorized.html', athlete=athlete)
 
 
 @app.route('/webhook', methods=['GET', 'POST'])
@@ -78,7 +77,7 @@ def webhook():
             return response
         else:
             print('verify tokens do not match')
-    return 'ouups... something wrong', 500
+    return abort(500)
 
 
 @app.route('/admin/')
