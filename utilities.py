@@ -118,8 +118,8 @@ def add_weather(athlete_id, activity_id):
     """
     activity = get_activity(athlete_id, activity_id)
 
-    # Activity type checking. Skip processing if activity is manual.
-    if activity.get('manual', False) or activity.get('trainer', False):
+    # Activity type checking. Skip processing if activity is manual or indoor.
+    if activity.get('manual', False) or activity.get('trainer', False) or activity.get('type', '') == 'VirtualRide':
         print(f"Activity with ID{activity_id} is manual created or indoor. Can't add weather info for it.")
         return 3  # code 3 - ok, but no processing
 
