@@ -1,7 +1,7 @@
 # Strava Weather
 
 Web application to add weather conditions to description of Strava activities. You can deploy this application as your own private app with your custom weather server and personal API tokens.
-This is free analog to Premium [klimat.app](http://klimat.app)
+This is a free analog to Premium [klimat.app](http://klimat.app)
 
 In application set russian language for description by default.
 

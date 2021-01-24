@@ -119,13 +119,9 @@ def add_weather(athlete_id, activity_id):
     activity = get_activity(athlete_id, activity_id)
 
     # Activity type checking. Skip processing if activity is manual.
-    try:
-        if activity['manual']:
-            print(f"Activity with ID{activity_id} is manual created. Can't add weather info for it.")
-            return 3  # code 3 - ok, but no processing
-    except KeyError:
-        print(f'ERROR: - {time.time()} - No manual key for activity ID{activity_id}, athlete ID{athlete_id}')
-        return 1  # code 1 - error
+    if activity.get('manual', False) or activity.get('trainer', False):
+        print(f"Activity with ID{activity_id} is manual created or indoor. Can't add weather info for it.")
+        return 3  # code 3 - ok, but no processing
 
     # Description of activity checking. Don't format this activity if it contains a weather data.
     description = activity.get('description', '')
