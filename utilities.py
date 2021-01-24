@@ -30,19 +30,17 @@ def get_tokens(code):
 
 
 def update_tokens(tokens):
-    client_id = os.environ.get('STRAVA_CLIENT_ID')
-    client_secret = os.environ.get('STRAVA_CLIENT_SECRET')
-    if tokens[3] < time.time():
+    if tokens.expires_at < time.time():
         params = {
-            "client_id": client_id,
-            "client_secret": client_secret,
-            "refresh_token": tokens[2],
+            "client_id": os.environ.get('STRAVA_CLIENT_ID'),
+            "client_secret": os.environ.get('STRAVA_CLIENT_SECRET'),
+            "refresh_token": tokens.refresh_token,
             "grant_type": "refresh_token"
         }
         refresh_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
         try:
-            return tokens[0], refresh_response['access_token'], \
-                   refresh_response['refresh_token'], refresh_response['expires_at']
+            return manage_db.Tokens(tokens.id, refresh_response['access_token'],
+                                    refresh_response['refresh_token'], refresh_response['expires_at'])
         except KeyError:
             print('Token refresh is failed.')
     return tokens
