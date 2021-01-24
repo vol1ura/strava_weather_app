@@ -9,7 +9,8 @@ In application set russian language for description by default.
 
 * You will get brief description of weather condition.
 * Your own workout description will be saved and added to the description as well.
-* No advertising, no branding and any additional marks.
+* You can select the metrics to be used in the description.
+* No fees, no advertising, no branding and any additional marks.
 * Air quality and pollution measurement data.
-* Full russian weather description.
+* You can select language -  russian or english.
 * You can suggest your wishes and new ideas. I will try to take them into account and implement them if I can. See my contact info.
