@@ -45,6 +45,14 @@ def add_athlete(tokens: Tokens):
 
 
 def add_settings(athlete_id: int, hum: int, wind: int, aqi: int, lan: str):
+    """Write to database preferable metrics of weather description.
+
+    :param athlete_id: integer Strava athlete id
+    :param hum: 1 to add humidity in description or 0 in other case
+    :param wind: 1 to add information about wind or 0 in other case
+    :param aqi: 1 to add air quality description or 0 in other case
+    :param lan: language - 'en' or 'ru'
+    """
     record_db = get_settings(athlete_id)
     if record_db.hum != hum or record_db.wind != wind or record_db.aqi != aqi or record_db.lan != lan:
         db = get_db()
@@ -55,6 +63,12 @@ def add_settings(athlete_id: int, hum: int, wind: int, aqi: int, lan: str):
 
 
 def get_settings(athlete_id: int):
+    """Read database and return weather description settings. If settings not provided function
+    returns default set with all metrics.
+
+    :param athlete_id: integer Strava athlete id
+    :return: named tuple Settings
+    """
     db = get_db()
     cur = db.cursor()
     sel = cur.execute(f'SELECT * FROM settings WHERE id = {athlete_id};').fetchone()
@@ -78,7 +92,7 @@ def init_app(app):
 
 
 def init_db():
-    """Initial function for database creation"""
+    """Initial function for database creation."""
     db = get_db()
     with current_app.open_resource('sql_db.sql') as f:
         db.executescript(f.read().decode('utf8'))

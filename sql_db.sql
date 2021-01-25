@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
     refresh_token text NOT NULL,
     expires_at integer NOT NULL);
 
-DROP TABLE IF EXISTS settings;
+/*DROP TABLE IF EXISTS settings;*/
 
 CREATE TABLE IF NOT EXISTS settings (
     id integer NOT NULL PRIMARY KEY,

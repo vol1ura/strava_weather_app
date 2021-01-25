@@ -133,7 +133,7 @@ def add_weather(athlete_id: int, activity_id: int):
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
-        print(f'ERROR - {time.time()} - Bad data format for activity ID{activity_id}. Use current time.')
+        print(f'ERROR - {time.time()} - Bad date format for activity ID{activity_id}. Use current time.')
         start_time = int(time.time()) - 3600  # if some problems with activity start time les's use time a hour ago
 
     lat = activity.get('start_latitude', None)
