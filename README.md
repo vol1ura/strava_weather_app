@@ -13,6 +13,6 @@ In application set russian language for description by default.
 * No fees, no advertising, no branding and any additional marks.
 * Air quality and pollution measurement data.
 * You can select language -  russian or english.
-* You can suggest your wishes and new ideas. I will try to take them into account and implement them if I can. See my contact info.
+* You can suggest your wishes and ideas in Issues. I will try to take them into account and implement them if I can.
 
 ![Description example](static/pic1.png)
