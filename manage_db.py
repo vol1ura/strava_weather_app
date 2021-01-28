@@ -58,6 +58,8 @@ def add_settings(settings: Settings):
         sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {settings.id};'
         cur.execute(sql, settings[1:])
     else:
+        if settings[1:] == (1, 1, 1, 'ru'):
+            return
         cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?)', settings)
     db.commit()
 
