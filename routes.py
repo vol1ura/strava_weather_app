@@ -20,11 +20,12 @@ def index():
 def final():
     if 'id' not in session:
         return abort(500)
-    hum = 1 if 'humidity' in request.values else 0
-    wind = 1 if 'wind' in request.values else 0
-    aqi = 1 if 'aqi' in request.values else 0
-    lan = request.values.get('lan', 'ru')
-    manage_db.add_settings(session['id'], hum, wind, aqi, lan)
+    settings = manage_db.Settings(session['id'],
+                                  1 if 'humidity' in request.values else 0,
+                                  1 if 'wind' in request.values else 0,
+                                  1 if 'aqi' in request.values else 0,
+                                  request.values.get('lan', 'ru'))
+    manage_db.add_settings(settings)
     return render_template('final.html', athlete=session['athlete'])
 
 

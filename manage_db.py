@@ -44,22 +44,22 @@ def add_athlete(tokens: Tokens):
     db.commit()
 
 
-def add_settings(athlete_id: int, hum: int, wind: int, aqi: int, lan: str):
+def add_settings(settings: Settings):
     """Write to database preferable metrics of weather description.
 
-    :param athlete_id: integer Strava athlete id
-    :param hum: 1 to add humidity in description or 0 in other case
-    :param wind: 1 to add information about wind or 0 in other case
-    :param aqi: 1 to add air quality description or 0 in other case
-    :param lan: language - 'en' or 'ru'
+    :param settings: named tuple Settings
     """
-    record_db = get_settings(athlete_id)
-    if record_db.hum != hum or record_db.wind != wind or record_db.aqi != aqi or record_db.lan != lan:
-        db = get_db()
-        cur = db.cursor()
-        sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {athlete_id};'
-        cur.execute(sql, (hum, wind, aqi, lan))
-        db.commit()
+    db = get_db()
+    cur = db.cursor()
+    sel = cur.execute(f'SELECT * FROM settings WHERE id = {settings.id};').fetchone()
+    if sel:
+        if settings == Settings(*sel):
+            return
+        sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {settings.id};'
+        cur.execute(sql, settings[1:])
+    else:
+        cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?)', settings)
+    db.commit()
 
 
 def get_settings(athlete_id: int):
