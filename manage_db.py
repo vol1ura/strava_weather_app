@@ -8,8 +8,9 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 
 
-Settings = namedtuple('Settings', 'id hum wind aqi lan')
 Tokens = namedtuple('Tokens', 'id access_token refresh_token expires_at')
+Settings = namedtuple('Settings', 'id hum wind aqi lan')
+DEFAULT_SETTINGS = Settings(0, 1, 1, 1, 'ru')
 
 
 def get_db():
@@ -51,16 +52,16 @@ def add_settings(settings: Settings):
     """
     db = get_db()
     cur = db.cursor()
-    sel = cur.execute(f'SELECT * FROM settings WHERE id = {settings.id};').fetchone()
-    if sel:
-        if settings == Settings(*sel):
+    settings_db = cur.execute(f'SELECT * FROM settings WHERE id = {settings.id};').fetchone()
+    if settings_db:
+        if settings == Settings(*settings_db):
             return
         sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {settings.id};'
         cur.execute(sql, settings[1:])
     else:
-        if settings[1:] == (1, 1, 1, 'ru'):
+        if settings[1:] == DEFAULT_SETTINGS[1:]:
             return
-        cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?)', settings)
+        cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?);', settings)
     db.commit()
 
 
@@ -77,10 +78,14 @@ def get_settings(athlete_id: int):
     if sel:
         return Settings(*sel)
     else:
-        return Settings(athlete_id, 1, 1, 1, 'ru')
+        return DEFAULT_SETTINGS._replace(id=athlete_id)
 
 
 def delete_athlete(athlete_id: int):
+    """Remove athlete's tokens and settings.
+
+    :param athlete_id: Strava athlete id
+    """
     db = get_db()
     cur = db.cursor()
     cur.execute(f'DELETE FROM subscribers WHERE id = {athlete_id};')

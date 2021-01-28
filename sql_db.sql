@@ -13,4 +13,4 @@ CREATE TABLE IF NOT EXISTS settings (
     humidity integer NOT NULL,
     wind integer NOT NULL,
     aqi integer NOT NULL,
-    lan integer NOT NULL);
+    lan text NOT NULL);
