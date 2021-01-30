@@ -86,8 +86,7 @@ def get_activity(athlete_id: int, activity_id: int):
 
 
 def modify_activity(athlete_id: int, activity_id: int, payload: dict):
-    """
-    Method can change UpdatableActivity parameters such that description, name, type, gear_id.
+    """Method can change UpdatableActivity parameters such that description, name, type, gear_id.
     See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
 
     :param athlete_id: integer Strava athlete ID
@@ -124,7 +123,7 @@ def add_weather(athlete_id: int, activity_id: int):
     # Description of activity checking. Don't format this activity if it contains a weather data.
     description = activity.get('description', '')
     description = '' if description is None else description.rstrip() + '\n'
-    if ('Погода:' in description) or ('Weather:' in description):
+    if '°C' in description:
         print(f'Weather description for activity ID{activity_id} is already set.')
         return 3  # code 3 - ok, but no processing
 
@@ -172,11 +171,11 @@ def get_weather_description(lat, lon, w_time: int, s) -> str:
     w = requests.get(base_url).json()['current']
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
-    description = f"{trnsl[s.lan][0]}: 🌡\xa0{w['temp']:.1f}°C ({trnsl[s.lan][1]} {w['feels_like']:.0f}°C), "
-    description += f"💦\xa0{w['humidity']}%, " if s.hum else ""
-    description += f"💨\xa0{w['wind_speed']:.1f}{trnsl[s.lan][4]} " \
-                   f"({trnsl[s.lan][5]} {compass_direction(w['wind_deg'], s.lan)}), " if s.wind else ""
-    description += f"{w['weather'][0]['description']}."
+    description = f"{w['weather'][0]['description'].capitalize()}, " \
+                  f"🌡\xa0{w['temp']:.1f}°C ({trnsl[s.lan][1]} {w['feels_like']:.0f}°C)"
+    description += f", 💦\xa0{w['humidity']}%" if s.hum else ""
+    description += f", 💨\xa0{w['wind_speed']:.1f}{trnsl[s.lan][4]} " \
+                   f"({trnsl[s.lan][5]} {compass_direction(w['wind_deg'], s.lan)})." if s.wind else "."
     return description
 
 
