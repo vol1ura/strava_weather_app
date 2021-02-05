@@ -168,7 +168,11 @@ def get_weather_description(lat, lon, w_time: int, s) -> str:
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang={s.lan}"
-    w = requests.get(base_url).json()['current']
+    try:
+        w = requests.get(base_url).json()['current']
+    except KeyError:
+        print(f'ERROR - {time.time()} - Weather request failed. User ID-{s.id} in ({lat},{lon}) at {w_time}.')
+        return ''
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
     description = f"{w['weather'][0]['description'].capitalize()}, " \
