@@ -176,9 +176,9 @@ def get_weather_description(lat, lon, w_time: int, s) -> str:
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
     description = f"{w['weather'][0]['description'].capitalize()}, " \
-                  f"🌡\xa0{w['temp']:.1f}°C ({trnsl[s.lan][1]} {w['feels_like']:.0f}°C)"
+                  f"🌡\xa0{w['temp']:.0f}°C ({trnsl[s.lan][1]} {w['feels_like']:.0f}°C)"
     description += f", 💦\xa0{w['humidity']}%" if s.hum else ""
-    description += f", 💨\xa0{w['wind_speed']:.1f}{trnsl[s.lan][4]} " \
+    description += f", 💨\xa0{w['wind_speed']:.0f}{trnsl[s.lan][4]} " \
                    f"({trnsl[s.lan][5]} {compass_direction(w['wind_deg'], s.lan)})." if s.wind else "."
     return description
 
@@ -204,15 +204,20 @@ def get_air_description(lat, lon, lan='en') -> str:
            f"{aq['list'][0]['components']['nh3']}(NH₃)."
 
 
-# if __name__ == '__main__':
+if __name__ == '__main__':
     # asub = is_app_subscribed()
     # print(asub)
-    # lan = 'ru'
-    # weather_api_key = os.environ.get('API_WEATHER_KEY')
-    # lat = 55.75222  # Moscow latitude default
-    # lon = 37.61556  # Moscow longitude default
+    from pprint import pprint
+    lan = 'ru'
+    SETTINGS = manage_db.Settings(1, 1, 1, 1, 'ru')
+    weather_api_key = os.environ.get('API_WEATHER_KEY')
+    lat = 55.752388  # Moscow latitude default
+    lon = 37.716457  # Moscow longitude default
+    start_time = 1612990145
+    # descr = get_weather_description(lat, lon, start_time, SETTINGS)
+    # print(descr)
     # start_time = int(time.time()) - 6000
-    # base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
-    #            f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={lan}"
-    # w = requests.get(base_url).json()['current']
-    # pprint(w)
+    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+               f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={SETTINGS.lan}"
+    w = requests.get(base_url).json()
+    pprint(w)
