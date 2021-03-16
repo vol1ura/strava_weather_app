@@ -199,9 +199,9 @@ def get_air_description(lat, lon, lan='en') -> str:
     # Air Quality Index: 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor
     aqi = ['😃', '🙂', '😐', '🙁', '😨'][aq['list'][0]['main']['aqi'] - 1]
     air = {'ru': 'Воздух', 'en': 'Air'}
-    return f"\n{air[lan]} {aqi} {aq['list'][0]['components']['so2']}(PM2.5), " \
-           f"{aq['list'][0]['components']['so2']}(SO₂), {aq['list'][0]['components']['no2']}(NO₂), " \
-           f"{aq['list'][0]['components']['nh3']}(NH₃)."
+    return f"\n{air[lan]} {aqi} {aq['list'][0]['components']['so2']:.0f}(PM2.5), " \
+           f"{aq['list'][0]['components']['so2']:.0f}(SO₂), {aq['list'][0]['components']['no2']:.0f}(NO₂), " \
+           f"{aq['list'][0]['components']['nh3']:.0f}(NH₃)."
 
 
 if __name__ == '__main__':
@@ -213,11 +213,12 @@ if __name__ == '__main__':
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     lat = 55.752388  # Moscow latitude default
     lon = 37.716457  # Moscow longitude default
+    pprint(get_air_description(lat, lon))
     start_time = 1612990145
     # descr = get_weather_description(lat, lon, start_time, SETTINGS)
     # print(descr)
     # start_time = int(time.time()) - 6000
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={SETTINGS.lan}"
-    w = requests.get(base_url).json()
-    pprint(w)
+    # w = requests.get(base_url).json()
+    # pprint(w)
