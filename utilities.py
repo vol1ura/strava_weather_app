@@ -199,9 +199,9 @@ def get_air_description(lat, lon, lan='en') -> str:
     # Air Quality Index: 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor
     aqi = ['😃', '🙂', '😐', '🙁', '😨'][aq['list'][0]['main']['aqi'] - 1]
     air = {'ru': 'Воздух', 'en': 'Air'}
-    return f"\n{air[lan]} {aqi} {aq['list'][0]['components']['so2']:.0f}(PM2.5), " \
+    return f"\n{air[lan]} {aqi} {aq['list'][0]['components']['pm2_5']:.0f}(PM2.5), " \
            f"{aq['list'][0]['components']['so2']:.0f}(SO₂), {aq['list'][0]['components']['no2']:.0f}(NO₂), " \
-           f"{aq['list'][0]['components']['nh3']:.0f}(NH₃)."
+           f"{aq['list'][0]['components']['nh3']:.1f}(NH₃)."
 
 
 if __name__ == '__main__':
