@@ -74,28 +74,34 @@ def is_app_subscribed() -> bool:
         return False
 
 
-def get_activity(athlete_id: int, activity_id: int):
+def get_activity(athlete_id: int, activity_id: int, headers=None):
     """Get information about activity
 
+    :param headers: Strava API header
     :param athlete_id: integer Strava athlete ID
     :param activity_id: integer or string is a number
     :return: dictionary with activity data
     """
+    if not headers:
+        headers = get_headers(athlete_id)
     url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.get(url, headers=get_headers(athlete_id)).json()
+    return requests.get(url, headers=headers).json()
 
 
-def modify_activity(athlete_id: int, activity_id: int, payload: dict):
+def modify_activity(athlete_id: int, activity_id: int, payload: dict, headers=None):
     """Method can change UpdatableActivity parameters such that description, name, type, gear_id.
     See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
 
+    :param headers: Strava API header
     :param athlete_id: integer Strava athlete ID
     :param activity_id: integer Strava activity ID
     :param payload: dictionary with keys description, name, type, gear_id, trainer, commute
     :return: dictionary with updated activity parameters
     """
+    if not headers:
+        headers = get_headers(athlete_id)
     url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.put(url, headers=get_headers(athlete_id), data=payload)
+    return requests.put(url, headers=headers, data=payload)
 
 
 def compass_direction(degree: int, lan='en') -> str:
@@ -113,7 +119,14 @@ def add_weather(athlete_id: int, activity_id: int):
     :param activity_id: Strava activity ID
     :return: status code
     """
-    activity = get_activity(athlete_id, activity_id)
+    t_start = time.time()
+    print(f'STATR adding weather. Request for headers at {t_start} ********')
+    athlete_headers = get_headers(athlete_id)
+    t_1 = time.time()
+    print(f'GET headers, it takes time = {t_1-t_start}')
+    activity = get_activity(athlete_id, activity_id, athlete_headers)
+    t_2 = time.time()
+    print(f'GET athlete activity, time delta = {t_2-t_1} *************')
 
     # Activity type checking. Skip processing if activity is manual or indoor.
     if activity.get('manual', False) or activity.get('trainer', False) or activity.get('type', '') == 'VirtualRide':
@@ -133,7 +146,7 @@ def add_weather(athlete_id: int, activity_id: int):
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
         print(f'ERROR - {time.time()} - Bad date format for activity ID{activity_id}. Use current time.')
-        start_time = int(time.time()) - 3600  # if some problems with activity start time les's use time a hour ago
+        start_time = int(time.time()) - 3600  # if some problems with activity start time let's use time a hour ago
 
     lat = activity.get('start_latitude', None)
     lon = activity.get('start_longitude', None)
@@ -152,7 +165,9 @@ def add_weather(athlete_id: int, activity_id: int):
     else:
         air_conditions = ''
     payload = {'description': description + weather_description + air_conditions}
-    result = modify_activity(athlete_id, activity_id, payload)
+    t_3 = time.time()
+    result = modify_activity(athlete_id, activity_id, payload, athlete_headers)  # FIXME: it is very long operation!!!
+    print(f'MODIFICATION complete, timedelta = {time.time()-t_3} ***************************')
     return 0 if result.ok else 1
 
 
@@ -208,6 +223,7 @@ if __name__ == '__main__':
     # asub = is_app_subscribed()
     # print(asub)
     from pprint import pprint
+
     lan = 'ru'
     SETTINGS = manage_db.Settings(1, 1, 1, 1, 'ru')
     weather_api_key = os.environ.get('API_WEATHER_KEY')

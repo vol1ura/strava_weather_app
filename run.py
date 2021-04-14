@@ -13,5 +13,4 @@ manage_db.init_app(app)
 
 
 if __name__ == '__main__':
-    isDEBUG_MODE = os.environ.get('DEBUG')
-    app.run(debug=isDEBUG_MODE)
+    app.run(host='0.0.0.0')
