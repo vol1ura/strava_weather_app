@@ -12,11 +12,49 @@ if os.path.exists(dotenv_path):
     load_dotenv(dotenv_path)
 
 
-def get_headers(athlete_id: int):
-    tokens = manage_db.get_athlete(athlete_id)
-    tokens = update_tokens(tokens)
-    manage_db.add_athlete(tokens)
-    return {'Authorization': f"Bearer {tokens.access_token}"}
+class StravaClient:
+    def __init__(self, athlete_id, activity_id):
+        self.__athlete_id = athlete_id
+        self.__activity_id = activity_id
+        self.__session = requests.Session()
+        tokens = manage_db.get_athlete(athlete_id)
+        tokens = self.update_tokens(tokens)
+        manage_db.add_athlete(tokens)
+        self.__headers = {'Authorization': f"Bearer {tokens.access_token}"}
+
+    def update_tokens(self, tokens):
+        if tokens.expires_at < time.time():
+            params = {
+                "client_id": os.environ.get('STRAVA_CLIENT_ID'),
+                "client_secret": os.environ.get('STRAVA_CLIENT_SECRET'),
+                "refresh_token": tokens.refresh_token,
+                "grant_type": "refresh_token"
+            }
+            refresh_response = self.__session.post("https://www.strava.com/oauth/token", data=params).json()
+            try:
+                return manage_db.Tokens(tokens.id, refresh_response['access_token'],
+                                        refresh_response['refresh_token'], refresh_response['expires_at'])
+            except KeyError:
+                print('Token refresh is failed.')
+        return tokens
+
+    def get_activity(self):
+        """Get information about activity
+
+        :return: dictionary with activity data
+        """
+        url = f'https://www.strava.com/api/v3/activities/{self.__activity_id}'
+        return self.__session.get(url, headers=self.__headers).json()
+
+    def modify_activity(self, payload: dict):
+        """Method can change UpdatableActivity parameters such that description, name, type, gear_id.
+        See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
+
+        :param payload: dictionary with keys description, name, type, gear_id, trainer, commute
+        :return: dictionary with updated activity parameters
+        """
+        url = f'https://www.strava.com/api/v3/activities/{self.__activity_id}'
+        return self.__session.put(url, headers=self.__headers, data=payload)
 
 
 def get_tokens(code):
@@ -27,23 +65,6 @@ def get_tokens(code):
         "grant_type": "authorization_code"
     }
     return requests.post("https://www.strava.com/oauth/token", data=params).json()
-
-
-def update_tokens(tokens):
-    if tokens.expires_at < time.time():
-        params = {
-            "client_id": os.environ.get('STRAVA_CLIENT_ID'),
-            "client_secret": os.environ.get('STRAVA_CLIENT_SECRET'),
-            "refresh_token": tokens.refresh_token,
-            "grant_type": "refresh_token"
-        }
-        refresh_response = requests.post("https://www.strava.com/oauth/token", data=params).json()
-        try:
-            return manage_db.Tokens(tokens.id, refresh_response['access_token'],
-                                    refresh_response['refresh_token'], refresh_response['expires_at'])
-        except KeyError:
-            print('Token refresh is failed.')
-    return tokens
 
 
 def make_link_to_get_code(redirect_url: str) -> str:
@@ -74,36 +95,6 @@ def is_app_subscribed() -> bool:
         return False
 
 
-def get_activity(athlete_id: int, activity_id: int, headers=None):
-    """Get information about activity
-
-    :param headers: Strava API header
-    :param athlete_id: integer Strava athlete ID
-    :param activity_id: integer or string is a number
-    :return: dictionary with activity data
-    """
-    if not headers:
-        headers = get_headers(athlete_id)
-    url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.get(url, headers=headers).json()
-
-
-def modify_activity(athlete_id: int, activity_id: int, payload: dict, headers=None):
-    """Method can change UpdatableActivity parameters such that description, name, type, gear_id.
-    See https://developers.strava.com/docs/reference/#api-models-UpdatableActivity
-
-    :param headers: Strava API header
-    :param athlete_id: integer Strava athlete ID
-    :param activity_id: integer Strava activity ID
-    :param payload: dictionary with keys description, name, type, gear_id, trainer, commute
-    :return: dictionary with updated activity parameters
-    """
-    if not headers:
-        headers = get_headers(athlete_id)
-    url = f'https://www.strava.com/api/v3/activities/{activity_id}'
-    return requests.put(url, headers=headers, data=payload)
-
-
 def compass_direction(degree: int, lan='en') -> str:
     compass_arr = {'ru': ["С", "ССВ", "СВ", "ВСВ", "В", "ВЮВ", "ЮВ", "ЮЮВ",
                           "Ю", "ЮЮЗ", "ЮЗ", "ЗЮЗ", "З", "ЗСЗ", "СЗ", "ССЗ", "С"],
@@ -121,12 +112,10 @@ def add_weather(athlete_id: int, activity_id: int):
     """
     t_start = time.time()
     print(f'STATR adding weather. Request for headers at {t_start} ********')
-    athlete_headers = get_headers(athlete_id)
+    strava = StravaClient(athlete_id, activity_id)
+    activity = strava.get_activity()
     t_1 = time.time()
-    print(f'GET headers, it takes time = {t_1-t_start}')
-    activity = get_activity(athlete_id, activity_id, athlete_headers)
-    t_2 = time.time()
-    print(f'GET athlete activity, time delta = {t_2-t_1} *************')
+    print(f'GET athlete activity, time delta = {t_1-t_start} *************')
 
     # Activity type checking. Skip processing if activity is manual or indoor.
     if activity.get('manual', False) or activity.get('trainer', False) or activity.get('type', '') == 'VirtualRide':
@@ -166,7 +155,7 @@ def add_weather(athlete_id: int, activity_id: int):
         air_conditions = ''
     payload = {'description': description + weather_description + air_conditions}
     t_3 = time.time()
-    result = modify_activity(athlete_id, activity_id, payload, athlete_headers)  # FIXME: it is very long operation!!!
+    result = strava.modify_activity(payload)  # FIXME: it is very long operation!!!
     print(f'MODIFICATION complete, timedelta = {time.time()-t_3} ***************************')
     return 0 if result.ok else 1
 
