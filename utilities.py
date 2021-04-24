@@ -111,11 +111,10 @@ def add_weather(athlete_id: int, activity_id: int):
     :return: status code
     """
     t_start = time.time()
-    print(f'STATR adding weather. Request for headers at {t_start} ********')
     strava = StravaClient(athlete_id, activity_id)
     activity = strava.get_activity()
     t_1 = time.time()
-    print(f'GET athlete activity, time delta = {t_1-t_start} *************')
+    print(f'GET athlete activity, time delta = {t_1-t_start:.6f} ***************************')
 
     # Activity type checking. Skip processing if activity is manual or indoor.
     if activity.get('manual', False) or activity.get('trainer', False) or activity.get('type', '') == 'VirtualRide':
@@ -156,7 +155,7 @@ def add_weather(athlete_id: int, activity_id: int):
     payload = {'description': description + weather_description + air_conditions}
     t_3 = time.time()
     result = strava.modify_activity(payload)  # FIXME: it is very long operation!!!
-    print(f'MODIFICATION complete, timedelta = {time.time()-t_3} ***************************')
+    print(f'MODIFICATION complete, timedelta = {time.time()-t_3:.6f} ***************************')
     return 0 if result.ok else 1
 
 
@@ -209,9 +208,9 @@ def get_air_description(lat, lon, lan='en') -> str:
 
 
 if __name__ == '__main__':
+    from pprint import pprint
     # asub = is_app_subscribed()
     # print(asub)
-    from pprint import pprint
 
     lan = 'ru'
     SETTINGS = manage_db.Settings(1, 1, 1, 1, 'ru')

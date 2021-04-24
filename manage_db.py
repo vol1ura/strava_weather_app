@@ -1,12 +1,9 @@
-import os
 import sqlite3
 from collections import namedtuple
 
 import click
-from dotenv import load_dotenv
 from flask import current_app, g
 from flask.cli import with_appcontext
-
 
 Tokens = namedtuple('Tokens', 'id access_token refresh_token expires_at')
 Settings = namedtuple('Settings', 'id hum wind aqi lan')
@@ -26,8 +23,6 @@ def get_athlete(athlete_id: int):
     record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
     if record_db:
         return Tokens(*record_db)
-    else:
-        return None
 
 
 def add_athlete(tokens: Tokens):
@@ -120,6 +115,9 @@ def init_db_command():
 
 
 if __name__ == '__main__':
+    import os
+    from dotenv import load_dotenv
+
     dotenv_path = os.path.join(os.path.dirname(__file__), '.env')
     if os.path.exists(dotenv_path):
         load_dotenv(dotenv_path)
