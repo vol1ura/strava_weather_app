@@ -2,16 +2,19 @@ import os
 from pprint import pprint
 
 from flask import Flask, url_for, render_template, request, session, abort, make_response, redirect
+from flask_executor import Executor
 from flask_restful import reqparse
 
 import manage_db
 import utilities
 
 app = Flask(__name__)
+executor = Executor(app)
 
 app.config.from_mapping(
     SECRET_KEY=os.environ.get('SECRET_KEY'),
-    DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE'))
+    DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE')),
+    EXECUTOR_PROPAGATE_EXCEPTIONS=True
 )
 manage_db.init_app(app)
 
@@ -66,7 +69,7 @@ def webhook():
         args = parser.parse_args()
         pprint(args)  # TODO remove after debugging
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-            utilities.add_weather(args['owner_id'], args['object_id'])
+            executor.submit(utilities.add_weather, args['owner_id'], args['object_id'])
         if args['updates'].get('authorized', '') == 'false':
             manage_db.delete_athlete(args['owner_id'])
         return 'webhook ok', 200
