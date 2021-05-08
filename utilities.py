@@ -141,11 +141,17 @@ def add_weather(athlete_id: int, activity_id: int):
 
     settings = manage_db.get_settings(athlete_id)
 
-    if lat and lon:
-        weather_description = get_weather_description(lat, lon, start_time, settings)
-    else:
+    if not (lat and lon):
         print(f'WARNING - {time.time()} - No geo position for ID{activity_id}, ({lat}, {lon}), T={start_time}')
         return 3  # code 3 - ok, but no processing
+
+    if settings.icon:
+        icon = get_weather_icon(lat, lon, start_time)
+        payload = {'name': icon + ' ' + activity.get('name')}
+        result = strava.modify_activity(payload)  # FIXME: it is very long operation!!!
+        return 0 if result.ok else 1
+
+    weather_description = get_weather_description(lat, lon, start_time, settings)
 
     # Add air quality only if user set this option and time of activity uploading is appropriate!
     if settings.aqi and (start_time + activity['elapsed_time'] + 7200 > time.time()):
@@ -159,7 +165,7 @@ def add_weather(athlete_id: int, activity_id: int):
     return 0 if result.ok else 1
 
 
-def get_weather_description(lat, lon, w_time: int, s) -> str:
+def get_weather_description(lat, lon, w_time, s) -> str:
     """Get weather data using https://openweathermap.org/ API.
 
     :param lat: latitude
@@ -207,22 +213,46 @@ def get_air_description(lat, lon, lan='en') -> str:
            f"{aq['list'][0]['components']['nh3']:.1f}(NH₃)."
 
 
+def get_weather_icon(lat, lon, w_time):
+    """Get weather icon using https://openweathermap.org/ API.
+    See icon codes on https://openweathermap.org/weather-conditions
+
+    :param lat: latitude
+    :param lon: longitude
+    :param w_time: time of requested weather data
+    :return: emoji with weather
+    """
+    icons = {'01d': '🌞', '01n': '🌙', '02d': '🌤', '02n': '🌆', '03d': '☁', '03n': '☁', '04d': '🌥', '04n': '🌥',
+             '50d': '🌫', '50n': '🌫', '13d': '🌨', '13n': '🌨', '10n': '🌧', '10d': '🌦', '09d': '🌧', '09n': '🌧',
+             '11d': '⛈', '11n': '⛈'}
+    weather_api_key = os.environ.get('API_WEATHER_KEY')
+    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+               f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang=en"
+    try:
+        icon_code = requests.get(base_url).json()['current']['weather'][0]['icon']
+        return icons[icon_code]
+    except KeyError:
+        print(f'ERROR - {time.time()} - Weather request failed in ({lat},{lon}) at {w_time}.')
+        return ''
+
+
 if __name__ == '__main__':
     from pprint import pprint
     # asub = is_app_subscribed()
     # print(asub)
 
-    lan = 'ru'
-    SETTINGS = manage_db.Settings(1, 1, 1, 1, 'ru')
-    weather_api_key = os.environ.get('API_WEATHER_KEY')
-    lat = 55.752388  # Moscow latitude default
-    lon = 37.716457  # Moscow longitude default
-    pprint(get_air_description(lat, lon))
-    start_time = 1612990145
+    # lan = 'ru'
+    # SETTINGS = manage_db.Settings(1, 1, 1, 1, 'ru')
+    # weather_api_key = os.environ.get('API_WEATHER_KEY')
+    # lat = 55.752388  # Moscow latitude default
+    # lon = 37.716457  # Moscow longitude default
+    # pprint(get_weather_pictogram(lat, lon, int(time.time()-3600)))
+    # pprint(get_air_description(lat, lon))
+    # start_time = 1612990145
     # descr = get_weather_description(lat, lon, start_time, SETTINGS)
     # print(descr)
     # start_time = int(time.time()) - 6000
-    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
-               f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={SETTINGS.lan}"
+    # base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+    #            f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={SETTINGS.lan}"
     # w = requests.get(base_url).json()
     # pprint(w)

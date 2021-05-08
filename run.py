@@ -28,6 +28,7 @@ def final():
     if 'id' not in session:
         return abort(500)
     settings = manage_db.Settings(session['id'],
+                                  1 if 'icon' in request.values else 0,
                                   1 if 'humidity' in request.values else 0,
                                   1 if 'wind' in request.values else 0,
                                   1 if 'aqi' in request.values else 0,

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS subscribers (
 
 CREATE TABLE IF NOT EXISTS settings (
     id integer NOT NULL PRIMARY KEY,
+    icon integer NOT NULL,
     humidity integer NOT NULL,
     wind integer NOT NULL,
     aqi integer NOT NULL,

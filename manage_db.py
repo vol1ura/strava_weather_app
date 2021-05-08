@@ -6,8 +6,8 @@ from flask import current_app, g
 from flask.cli import with_appcontext
 
 Tokens = namedtuple('Tokens', 'id access_token refresh_token expires_at')
-Settings = namedtuple('Settings', 'id hum wind aqi lan')
-DEFAULT_SETTINGS = Settings(0, 1, 1, 1, 'ru')
+Settings = namedtuple('Settings', 'id icon hum wind aqi lan')
+DEFAULT_SETTINGS = Settings(0, 0, 1, 1, 1, 'ru')
 
 
 def get_db():
@@ -51,12 +51,13 @@ def add_settings(settings: Settings):
     if settings_db:
         if settings == Settings(*settings_db):
             return
-        sql = f'UPDATE settings SET humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {settings.id};'
+        print(settings[1:])
+        sql = f'UPDATE settings SET icon = ?, humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {settings.id};'
         cur.execute(sql, settings[1:])
     else:
         if settings[1:] == DEFAULT_SETTINGS[1:]:
             return
-        cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?);', settings)
+        cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?, ?);', settings)
     db.commit()
 
 
@@ -83,8 +84,8 @@ def delete_athlete(athlete_id: int):
     """
     db = get_db()
     cur = db.cursor()
-    cur.execute(f'DELETE FROM subscribers WHERE id = {athlete_id};')
-    cur.execute(f'DELETE FROM settings WHERE id = {athlete_id};')
+    cur.execute(f'DELETE FROM subscribers WHERE id = ?', (athlete_id,))
+    cur.execute(f'DELETE FROM settings WHERE id = ?', (athlete_id,))
     db.commit()
 
 
