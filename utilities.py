@@ -146,8 +146,11 @@ def add_weather(athlete_id: int, activity_id: int):
         return 3  # code 3 - ok, but no processing
 
     if settings.icon:
+        activity_title = activity.get('name')
         icon = get_weather_icon(lat, lon, start_time)
-        payload = {'name': icon + ' ' + activity.get('name')}
+        if activity_title.startswith(icon):
+            return 3
+        payload = {'name': icon + ' ' + activity_title}
         result = strava.modify_activity(payload)  # FIXME: it is very long operation!!!
         return 0 if result.ok else 1
 
