@@ -20,7 +20,7 @@ def get_db():
 def get_athlete(athlete_id: int):
     db = get_db()
     cur = db.cursor()
-    record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id};').fetchone()
+    record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = ?', (athlete_id,)).fetchone()
     if record_db:
         return Tokens(*record_db)
 
@@ -30,7 +30,7 @@ def add_athlete(tokens: Tokens):
     db = get_db()
     cur = db.cursor()
     if not tokens_db:
-        sql = 'INSERT INTO subscribers VALUES(?, ?, ?, ?);'
+        sql = 'INSERT INTO subscribers VALUES(?, ?, ?, ?)'
         cur.execute(sql, tokens)
     elif tokens.access_token != tokens_db.access_token:
         sql = f'UPDATE subscribers SET access_token = ?, refresh_token = ?, expires_at = ? WHERE id = {tokens.id};'
@@ -47,17 +47,16 @@ def add_settings(settings: Settings):
     """
     db = get_db()
     cur = db.cursor()
-    settings_db = cur.execute(f'SELECT * FROM settings WHERE id = {settings.id};').fetchone()
+    settings_db = cur.execute('SELECT * FROM settings WHERE id = ?', (settings.id,)).fetchone()
     if settings_db:
         if settings == Settings(*settings_db):
             return
-        print(settings[1:])
         sql = f'UPDATE settings SET icon = ?, humidity = ?, wind = ?, aqi = ?, lan = ? WHERE id = {settings.id};'
         cur.execute(sql, settings[1:])
     else:
         if settings[1:] == DEFAULT_SETTINGS[1:]:
             return
-        cur.execute(f'INSERT INTO settings VALUES(?, ?, ?, ?, ?, ?);', settings)
+        cur.execute('INSERT INTO settings VALUES(?, ?, ?, ?, ?, ?)', settings)
     db.commit()
 
 

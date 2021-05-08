@@ -10,6 +10,9 @@ import utilities
 app = Flask(__name__)
 
 app.config.from_mapping(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
     SECRET_KEY=os.environ.get('SECRET_KEY'),
     DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE'))
 )
