@@ -1,5 +1,6 @@
 import os
 from pprint import pprint
+from multiprocessing import Process
 
 from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify
 from flask_restful import reqparse
@@ -70,8 +71,11 @@ def webhook():
         args = parser.parse_args()
         pprint(args)  # TODO remove after debugging
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-            utilities.add_weather(args['owner_id'], args['object_id'])
-        if args['updates'].get('authorized', '') == 'false':
+            # global p
+            p = Process(target=utilities.add_weather, args=(args['owner_id'], args['object_id']))
+            p.daemon = True
+            p.start()
+        elif args['updates'].get('authorized', '') == 'false':
             manage_db.delete_athlete(args['owner_id'])
         return 'webhook ok', 200
     if request.method == 'GET':
