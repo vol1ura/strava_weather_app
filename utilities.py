@@ -110,11 +110,8 @@ def add_weather(athlete_id: int, activity_id: int):
     :param activity_id: Strava activity ID
     :return: status code
     """
-    t_start = time.time()
     strava = StravaClient(athlete_id, activity_id)
     activity = strava.get_activity()
-    t_1 = time.time()
-    print(f'GET athlete activity, time delta = {t_1-t_start:.6f} ***************************')
 
     # Activity type checking. Skip processing if activity is manual or indoor.
     if activity.get('manual', False) or activity.get('trainer', False) or activity.get('type', '') == 'VirtualRide':
@@ -151,7 +148,7 @@ def add_weather(athlete_id: int, activity_id: int):
         if activity_title.startswith(icon):
             return 3
         payload = {'name': icon + ' ' + activity_title}
-        result = strava.modify_activity(payload)  # FIXME: it is very long operation!!!
+        result = strava.modify_activity(payload)
         return 0 if result.ok else 1
 
     weather_description = get_weather_description(lat, lon, start_time, settings)
@@ -162,9 +159,7 @@ def add_weather(athlete_id: int, activity_id: int):
     else:
         air_conditions = ''
     payload = {'description': description + weather_description + air_conditions}
-    t_3 = time.time()
-    result = strava.modify_activity(payload)  # FIXME: it is very long operation!!!
-    print(f'MODIFICATION complete, timedelta = {time.time()-t_3:.6f} ***************************')
+    result = strava.modify_activity(payload)
     return 0 if result.ok else 1
 
 
@@ -225,9 +220,9 @@ def get_weather_icon(lat, lon, w_time):
     :param w_time: time of requested weather data
     :return: emoji with weather
     """
-    icons = {'01d': '🌞', '01n': '🌙', '02d': '🌤', '02n': '☁', '03d': '☁', '03n': '☁', '04d': '🌥', '04n': '🌥',
-             '50d': '🌫', '50n': '🌫', '13d': '🌨', '13n': '🌨', '10n': '🌧', '10d': '🌦', '09d': '🌧', '09n': '🌧',
-             '11d': '⛈', '11n': '⛈'}
+    icons = {'01d': '☀', '01n': '🌙', '02d': '🌤', '02n': '☁', '03d': '☁', '03n': '☁',
+             '04d': '🌥', '04n': '🌥', '50d': '🌫', '50n': '🌫', '13d': '🌨', '13n': '🌨',
+             '10n': '🌧', '10d': '🌦', '09d': '🌧', '09n': '🌧', '11d': '⛈', '11n': '⛈'}
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang=en"

@@ -1,6 +1,6 @@
 import os
-from pprint import pprint
 from multiprocessing import Process
+from pprint import pprint
 
 from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify
 from flask_restful import reqparse
@@ -71,7 +71,6 @@ def webhook():
         args = parser.parse_args()
         pprint(args)  # TODO remove after debugging
         if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-            # global p
             p = Process(target=utilities.add_weather, args=(args['owner_id'], args['object_id']))
             p.daemon = True
             p.start()
