@@ -1,7 +1,7 @@
 import os
 from pprint import pprint
 
-from flask import Flask, url_for, render_template, request, session, abort, make_response, redirect
+from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify
 from flask_restful import reqparse
 
 import manage_db
@@ -80,24 +80,13 @@ def webhook():
         req = request.values
         mode = req.get('hub.mode', '')
         token = req.get('hub.verify_token', '')
-        print(mode, token)
         if mode == 'subscribe' and token == os.environ.get('STRAVA_WEBHOOK_TOKEN'):
-            print('WEBHOOK_VERIFIED')
+            print('WEBHOOK VERIFIED')
             challenge = req.get('hub.challenge', '')
-            response = make_response({'hub.challenge': challenge}, 200)
-            response.headers['Content-Type'] = 'application/json'
-            return response
+            return jsonify({'hub.challenge': challenge})
         else:
             print('verify tokens do not match')
     return abort(500)
-
-
-@app.route('/admin/')
-def admin():
-    if utilities.is_app_subscribed():
-        return 'subscription is OK'
-    else:
-        return 'no subscription'
 
 
 @app.route('/features/')
@@ -126,4 +115,4 @@ def http_500_handler(error):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()
