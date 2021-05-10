@@ -22,3 +22,7 @@ In application set russian language for description by default.
 * You can suggest your wishes and ideas in Issues. I will try to take them into account and implement them if I can.
 
 ![Description example](static/pic1.png)
+
+You can also set adding only an emoji in the activity title:
+
+![Emoji in the title](static/pic2.png)
