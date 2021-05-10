@@ -132,6 +132,8 @@ def add_weather(athlete_id: int, activity_id: int):
     except (KeyError, ValueError):
         print(f'ERROR - {time.time()} - Bad date format for activity ID{activity_id}. Use current time.')
         start_time = int(time.time()) - 3600  # if some problems with activity start time let's use time a hour ago
+    elapsed_time = activity.get('elapsed_time', 0)
+    activity_time = start_time + elapsed_time // 2
 
     lat = activity.get('start_latitude', None)
     lon = activity.get('start_longitude', None)
@@ -144,14 +146,14 @@ def add_weather(athlete_id: int, activity_id: int):
 
     if settings.icon:
         activity_title = activity.get('name')
-        icon = get_weather_icon(lat, lon, start_time)
+        icon = get_weather_icon(lat, lon, activity_time)
         if activity_title.startswith(icon):
             return 3
         payload = {'name': icon + ' ' + activity_title}
         result = strava.modify_activity(payload)
         return 0 if result.ok else 1
 
-    weather_description = get_weather_description(lat, lon, start_time, settings)
+    weather_description = get_weather_description(lat, lon, activity_time, settings)
 
     # Add air quality only if user set this option and time of activity uploading is appropriate!
     if settings.aqi and (start_time + activity['elapsed_time'] + 7200 > time.time()):
@@ -220,7 +222,7 @@ def get_weather_icon(lat, lon, w_time):
     :param w_time: time of requested weather data
     :return: emoji with weather
     """
-    icons = {'01d': '☀', '01n': '🌙', '02d': '🌤', '02n': '☁', '03d': '☁', '03n': '☁',
+    icons = {'01d': '🌄', '01n': '🌙', '02d': '🌤', '02n': '☁', '03d': '☁', '03n': '☁',
              '04d': '🌥', '04n': '🌥', '50d': '🌫', '50n': '🌫', '13d': '🌨', '13n': '🌨',
              '10n': '🌧', '10d': '🌦', '09d': '🌧', '09n': '🌧', '11d': '⛈', '11n': '⛈'}
     weather_api_key = os.environ.get('API_WEATHER_KEY')
