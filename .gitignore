@@ -4,6 +4,7 @@
 *.db
 *.http
 # == directories ==
+.pytest_cache/
 __pycache__/
 .idea/
 venv/

@@ -234,25 +234,3 @@ def get_weather_icon(lat, lon, w_time):
     except KeyError:
         print(f'ERROR - {time.time()} - Weather request failed in ({lat},{lon}) at {w_time}.')
         return ''
-
-
-if __name__ == '__main__':
-    from pprint import pprint
-    # asub = is_app_subscribed()
-    # print(asub)
-
-    # lan = 'ru'
-    # SETTINGS = manage_db.Settings(1, 1, 1, 1, 'ru')
-    # weather_api_key = os.environ.get('API_WEATHER_KEY')
-    # lat = 55.752388  # Moscow latitude default
-    # lon = 37.716457  # Moscow longitude default
-    # pprint(get_weather_pictogram(lat, lon, int(time.time()-3600)))
-    # pprint(get_air_description(lat, lon))
-    # start_time = 1612990145
-    # descr = get_weather_description(lat, lon, start_time, SETTINGS)
-    # print(descr)
-    # start_time = int(time.time()) - 6000
-    # base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
-    #            f"lat={lat}&lon={lon}&dt={start_time}&appid={weather_api_key}&units=metric&lang={SETTINGS.lan}"
-    # w = requests.get(base_url).json()
-    # pprint(w)
