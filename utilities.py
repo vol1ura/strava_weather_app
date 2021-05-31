@@ -222,7 +222,7 @@ def get_weather_icon(lat, lon, w_time):
     :param w_time: time of requested weather data
     :return: emoji with weather
     """
-    icons = {'01d': '☀️', '01n': '🌙', '02d': '🌤', '02n': '☁️', '03d': '☁️', '03n': '☁️',
+    icons = {'01d': '🌄', '01n': '🌙', '02d': '🌤', '02n': '☁', '03d': '☁', '03n': '☁',
              '04d': '🌥', '04n': '🌥', '50d': '🌫', '50n': '🌫', '13d': '🌨', '13n': '🌨',
              '10n': '🌧', '10d': '🌦', '09d': '🌧', '09n': '🌧', '11d': '⛈', '11n': '⛈'}
     weather_api_key = os.environ.get('API_WEATHER_KEY')
