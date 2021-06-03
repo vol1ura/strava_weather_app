@@ -130,7 +130,7 @@ def add_weather(athlete_id: int, activity_id: int):
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
         start_time = int(time.mktime(time_tuple))
     except (KeyError, ValueError):
-        print(f'ERROR - {time.time()} - Bad date format for activity ID{activity_id}. Use current time.')
+        print(f'WARNING - {int(time.time())} - Bad date format for activity ID{activity_id}. Use current time.')
         start_time = int(time.time()) - 3600  # if some problems with activity start time let's use time a hour ago
     elapsed_time = activity.get('elapsed_time', 0)
     activity_time = start_time + elapsed_time // 2
@@ -138,11 +138,11 @@ def add_weather(athlete_id: int, activity_id: int):
     lat = activity.get('start_latitude', None)
     lon = activity.get('start_longitude', None)
 
-    settings = manage_db.get_settings(athlete_id)
-
     if not (lat and lon):
-        print(f'WARNING - {time.time()} - No geo position for ID{activity_id}, ({lat}, {lon}), T={start_time}')
+        print(f'WARNING - {int(time.time())} - No geo position for ID{activity_id}, ({lat}, {lon}), T={start_time}')
         return 3  # code 3 - ok, but no processing
+
+    settings = manage_db.get_settings(athlete_id)
 
     if settings.icon:
         activity_title = activity.get('name')
