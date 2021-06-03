@@ -49,9 +49,18 @@ def test_get_air_description():
     assert re.fullmatch(r'\nВоздух . \d+\(PM2\.5\), \d+\(SO₂\), \d+\(NO₂\), \d+(\.\d)?\(NH₃\)\.', description)
 
 
-@pytest.mark.parametrize('activity_type', [{'manual': True}, {'trainer': True}, {'type': 'VirtualRide'}])
-def test_manual_act(activity_type, monkeypatch):
-    """Return 3 if activity is manual, trainer or VirtualRider"""
+activities_to_try = [{'manual': True}, {'trainer': True}, {'type': 'VirtualRide'},
+                     {'description': '0°C'}, {'description': ''}, {'start_latitude': 0}, {'start_longitude': 0}]
+
+
+@pytest.mark.parametrize('activity_type', activities_to_try)
+def test_add_weather_bad_activity(activity_type, monkeypatch):
+    """Return 3 if:
+
+    - activity is manual, trainer, VirtualRider;
+    - description is already set;
+    - absence of start coordinates.
+    In all this cases there is no needed to add the weather information to this activity."""
     class StravaClientMock:
         def __init__(self, athlete_id, activity_id):
             self.athlete_id = athlete_id
@@ -63,20 +72,3 @@ def test_manual_act(activity_type, monkeypatch):
 
     monkeypatch.setattr(utilities, 'StravaClient', StravaClientMock)
     assert utilities.add_weather(0, 0) == 3
-
-
-@pytest.mark.skip(reason='Not implemented yet')
-class TestAddWeather:
-    """Test add_weather function"""
-
-    def test_manual_indoor_activities(self):
-        pass
-        # assert utilities.add_weather(0, 0) == 3
-
-    def test_activity_with_weather(self):
-        """Return 3 if weather information already added in activity"""
-        pass
-
-    def test_activity_without_coordinates(self):
-        """Return 3 if activity doesn't contains latitude and longitude"""
-        pass
