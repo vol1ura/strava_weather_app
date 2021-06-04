@@ -50,7 +50,9 @@ def test_get_air_description():
 
 
 activities_to_try = [{'manual': True}, {'trainer': True}, {'type': 'VirtualRide'},
-                     {'description': '0°C'}, {'description': ''}, {'start_latitude': 0}, {'start_longitude': 0}]
+                     {'description': '0°C'}, {'description': ''}, {'start_latitude': 0}, {'start_longitude': 0},
+                     {'start_latitude': LAT, 'start_longitude': LON,
+                      'start_date': '2021-06-03T12:48:06Z', 'name': 'icon'}]
 
 
 @pytest.mark.parametrize('activity_type', activities_to_try)
@@ -59,7 +61,8 @@ def test_add_weather_bad_activity(activity_type, monkeypatch):
 
     - activity is manual, trainer, VirtualRider;
     - description is already set;
-    - absence of start coordinates.
+    - absence of start coordinates;
+    - icon in activity name is already set.
     In all this cases there is no needed to add the weather information to this activity."""
     class StravaClientMock:
         def __init__(self, athlete_id, activity_id):
@@ -71,4 +74,7 @@ def test_add_weather_bad_activity(activity_type, monkeypatch):
             return activity_type
 
     monkeypatch.setattr(utilities, 'StravaClient', StravaClientMock)
+    monkeypatch.setattr(manage_db, 'get_settings', lambda *args: manage_db.DEFAULT_SETTINGS._replace(icon=1))
+    monkeypatch.setattr(utilities, 'get_weather_description', lambda *args: '')
+    monkeypatch.setattr(utilities, 'get_weather_icon', lambda *args: 'icon')
     assert utilities.add_weather(0, 0) == 3
