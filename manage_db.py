@@ -20,7 +20,7 @@ def get_db():
 def get_athlete(athlete_id: int):
     db = get_db()
     cur = db.cursor()
-    record_db = cur.execute(f'SELECT * FROM subscribers WHERE id = ?', (athlete_id,)).fetchone()
+    record_db = cur.execute('SELECT * FROM subscribers WHERE id = ?', (athlete_id,)).fetchone()
     if record_db:
         return Tokens(*record_db)
 
@@ -83,8 +83,8 @@ def delete_athlete(athlete_id: int):
     """
     db = get_db()
     cur = db.cursor()
-    cur.execute(f'DELETE FROM subscribers WHERE id = ?', (athlete_id,))
-    cur.execute(f'DELETE FROM settings WHERE id = ?', (athlete_id,))
+    cur.execute('DELETE FROM subscribers WHERE id = ?', (athlete_id,))
+    cur.execute('DELETE FROM settings WHERE id = ?', (athlete_id,))
     db.commit()
 
 
