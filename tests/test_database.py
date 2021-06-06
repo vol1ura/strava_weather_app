@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 import pytest
@@ -14,7 +15,8 @@ expected_settings1 = manage_db.Settings(1, 111, 222, 333, 444, 'en')
 def database():
     db = sqlite3.connect(':memory:')
     db.row_factory = sqlite3.Row
-    with open('../sql_db.sql') as sql_script:
+    sql_script_path = os.path.dirname(os.path.abspath(__file__)).replace('/tests', '')
+    with open(os.path.join(sql_script_path, 'sql_db.sql')) as sql_script:
         db.executescript(sql_script.read())
     cur = db.cursor()
     cur.execute("INSERT INTO subscribers VALUES (?, ?, ?, ?)", expected_tokens1)
