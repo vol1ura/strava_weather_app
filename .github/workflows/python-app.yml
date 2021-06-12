@@ -36,6 +36,8 @@ jobs:
         pytest --cov-report=xml --cov=. tests/
       env:
         API_WEATHER_KEY: ${{ secrets.API_WEATHER_KEY }}
+        SECRET_KEY: test
+        DATABASE: test
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1
       with:
