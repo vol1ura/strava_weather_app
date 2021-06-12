@@ -26,16 +26,26 @@ def database():
 
 
 def test_get_athlete(database, monkeypatch):
+    """
+    GIVEN configured database with athlete tokens
+    WHEN requesting tokens by athlete ID
+    THEN check that tokens added to database equals to returned tokens
+    """
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     actual_tokens = manage_db.get_athlete(1)
     assert actual_tokens == expected_tokens1
 
 
 def test_add_athlete_new(database, monkeypatch):
+    """
+    GIVEN configured database
+    WHEN requesting tokens for new athlete
+    THEN check that tokens was added to database
+    """
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     manage_db.add_athlete(expected_tokens2)
     cur = database.cursor()
-    record2 = cur.execute("SELECT * FROM subscribers WHERE id = 2")
+    record2 = cur.execute('SELECT * FROM subscribers WHERE id = 2')
     actual_token2 = manage_db.Tokens(*record2.fetchone())
     assert expected_tokens2 == actual_token2
 
@@ -44,7 +54,7 @@ def test_add_athlete_no_changes(database, monkeypatch):
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     manage_db.add_athlete(expected_tokens1)
     cur = database.cursor()
-    record1 = cur.execute("SELECT * FROM subscribers WHERE id = 1")
+    record1 = cur.execute('SELECT * FROM subscribers WHERE id = 1')
     actual_token1 = manage_db.Tokens(*record1.fetchone())
     assert expected_tokens1 == actual_token1
 
