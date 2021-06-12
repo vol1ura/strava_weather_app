@@ -27,3 +27,10 @@ In application set russian language for description by default.
 You can also set adding only an emoji in the activity title:
 
 ![Emoji in the title](static/pic2.png)
+
+### Run tests
+
+```shell
+pip install -r tests/requirements.txt
+pytest --cov-report=term-missing:skip-covered --cov=. tests/
+```
