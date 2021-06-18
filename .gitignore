@@ -3,8 +3,10 @@
 *.env
 *.db
 *.http
+.coverage
 # == directories ==
 .pytest_cache/
 __pycache__/
 .idea/
 venv/
+htmlcov/
