@@ -22,7 +22,7 @@ class Result:
         self.ok = ok
 
     def json(self):
-        pass
+        return
 
 
 class StravaClientMock(ABC):
@@ -33,7 +33,7 @@ class StravaClientMock(ABC):
 
     @abstractmethod
     def get_activity(self):
-        pass
+        return
 
     @staticmethod
     def modify_activity(payload):
