@@ -62,34 +62,41 @@ def auth():
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
     if request.method == 'POST':
-        parser = reqparse.RequestParser()
-        parser.add_argument('owner_id', type=int, required=True)  # athlete's ID
-        parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
-        parser.add_argument('object_id', type=int, required=True)  # activity's ID
-        parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
-        parser.add_argument('updates', type=dict, required=True)  # For de-auth, there is {"authorized": "false"}
-        args = parser.parse_args()
-        pprint(args)  # TODO remove after debugging
-        if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-            p = Process(target=utilities.add_weather, args=(args['owner_id'], args['object_id']))
-            p.daemon = True
-            p.start()
-        elif args['updates'].get('authorized', '') == 'false':
-            manage_db.delete_athlete(args['owner_id'])
+        process_webhook_post()
         return 'webhook ok', 200
-    if request.method == 'GET':
-        if utilities.is_app_subscribed():
-            return 'You are already subscribed', 200
-        req = request.values
-        mode = req.get('hub.mode', '')
-        token = req.get('hub.verify_token', '')
-        if mode == 'subscribe' and token == os.environ.get('STRAVA_WEBHOOK_TOKEN'):
-            print('WEBHOOK VERIFIED')
-            challenge = req.get('hub.challenge', '')
-            return jsonify({'hub.challenge': challenge})
-        else:
-            print('verify tokens do not match')
-    return abort(500)
+    else:
+        return jsonify(process_webhook_get())
+
+
+def process_webhook_post():
+    parser = reqparse.RequestParser()
+    parser.add_argument('owner_id', type=int, required=True)  # athlete's ID
+    parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
+    parser.add_argument('object_id', type=int, required=True)  # activity's ID
+    parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
+    parser.add_argument('updates', type=dict, required=True)  # For de-auth, there is {"authorized": "false"}
+    args = parser.parse_args()
+    pprint(args)  # TODO remove after debugging
+    if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
+        p = Process(target=utilities.add_weather, args=(args['owner_id'], args['object_id']))
+        p.daemon = True
+        p.start()
+    if args['updates'].get('authorized', '') == 'false':
+        manage_db.delete_athlete(args['owner_id'])
+
+
+def process_webhook_get():
+    if utilities.is_app_subscribed():
+        return {'status': 'You are already subscribed'}
+    req = request.values
+    mode = req.get('hub.mode', '')
+    token = req.get('hub.verify_token', '')
+    if mode == 'subscribe' and token == os.environ.get('STRAVA_WEBHOOK_TOKEN'):
+        print('WEBHOOK VERIFIED')
+        challenge = req.get('hub.challenge', '')
+        return {'hub.challenge': challenge}
+    else:
+        return {'error': 'verification tokens does not match'}
 
 
 @app.route('/features/')
