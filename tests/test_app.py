@@ -1,9 +1,13 @@
+import json
+import os
+import urllib.parse
+
 import pytest
 from flask import url_for
 
 import manage_db
 import utilities
-from run import app as site
+from run import app as site, process_webhook_get
 
 
 @pytest.fixture
@@ -111,6 +115,75 @@ def test_contacts_page(client):
     assert b"https://www.strava.com/athletes/2843469" in response.data
     assert b"https://www.instagram.com/urka_runner/" in response.data
     assert b"https://github.com/vol1ura" in response.data
+
+
+def test_webhook_page_post(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    monkeypatch.setattr('run.process_webhook_post', lambda: None)
+    # WHEN the '/webhook/' page is requested (POST)
+    response = client.post(url_for('webhook'))
+    # THEN check that the response is valid
+    assert response.status_code == 200
+    assert b"webhook ok" in response.data
+
+
+def test_webhook_page_get(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    payload_to_test = {'message': 'test'}
+    monkeypatch.setattr('run.process_webhook_get', lambda: payload_to_test)
+    # WHEN the '/webhook/' page is requested (GET)
+    response = client.get(url_for('webhook'))
+    # THEN check that the response is valid
+    assert response.status_code == 200
+    assert response.content_type == 'application/json'
+    assert json.loads(response.data.decode()) == payload_to_test
+
+
+def test_process_webhook_get_subscribed(monkeypatch):
+    monkeypatch.setattr(utilities, 'is_app_subscribed', lambda: True)
+    status = process_webhook_get()
+    assert status == {'status': 'You are already subscribed'}
+
+
+def test_process_webhook_get_subscription(monkeypatch, app):
+    # GIVEN a Flask application configured for testing
+    monkeypatch.setattr(utilities, 'is_app_subscribed', lambda: False)
+    monkeypatch.setenv('STRAVA_WEBHOOK_TOKEN', 'token_for_test')
+    params = {'hub.mode': 'subscribe',
+              'hub.verify_token': os.environ.get('STRAVA_WEBHOOK_TOKEN'),
+              'hub.challenge': 'challenge_for_test'}
+    values_url = urllib.parse.urlencode(params)
+    # WHEN the '/webhook/?....params....' page is requested (GET)
+    with app.test_request_context(f'/webhook/?{values_url}'):
+        status = process_webhook_get()
+    # THEN check that status for response is valid
+    assert status == {'hub.challenge': 'challenge_for_test'}
+
+
+def test_process_webhook_get_subscription_failed(monkeypatch, app):
+    # GIVEN a Flask application configured for testing
+    monkeypatch.setattr(utilities, 'is_app_subscribed', lambda: False)
+    monkeypatch.setenv('STRAVA_WEBHOOK_TOKEN', 'token_for_test')
+    params = {'hub.mode': 'subscribe',
+              'hub.verify_token': 'failed_token',
+              'hub.challenge': 'challenge_for_test'}
+    values_url = urllib.parse.urlencode(params)
+
+    # WHEN the '/webhook/?....params....' page is requested (GET)
+    with app.test_request_context(f'/webhook/?{values_url}'):
+        status = process_webhook_get()
+    # THEN check that status for response is valid
+    assert status == {'error': 'verification tokens does not match'}
+
+    # WHEN the '/webhook/' page is requested (GET)
+    with app.test_request_context('/webhook/'):
+        status = process_webhook_get()
+    # THEN check that status for response is valid
+    assert status == {'error': 'verification tokens does not match'}
+
+
+def test_webhook_post():
+    pass
 
 
 def test_http_404_handler(client):
