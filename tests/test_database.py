@@ -2,13 +2,20 @@ import os
 import sqlite3
 
 import pytest
+from flask import g
 
 import manage_db
+from run import app as site
 
 expected_tokens1 = manage_db.Tokens(1, 'access_token', 'refresh_token', 'expires_at')
 expected_tokens2 = manage_db.Tokens(2, 'at2', 'rt2', 'exp2')
 
 expected_settings1 = manage_db.Settings(1, 111, 222, 333, 444, 'en')
+
+
+@pytest.fixture
+def app():
+    return site
 
 
 @pytest.fixture
@@ -147,3 +154,49 @@ def test_delete_athlete(database, monkeypatch):
     assert db_record_subcribers.fetchone() is None
     db_record_settings = cur.execute("SELECT * FROM settings WHERE id = 1")
     assert db_record_settings.fetchone() is None
+
+
+def test_get_db_connected(app, database):
+    # GIVEN a Flask application configured for testing
+    # WHEN get connection to database in application context
+    with app.app_context():
+        g.db = database
+        db = manage_db.get_db()
+    # THEN get database connection instance
+    assert isinstance(db, sqlite3.Connection)
+
+
+def test_get_db_not_connected(app):
+    # GIVEN a Flask application configured for testing
+    app.config['DATABASE'] = ':memory:'
+    # WHEN get connection to database in application context
+    with app.app_context():
+        db = manage_db.get_db()
+    # THEN get database connection instance
+    assert isinstance(db, sqlite3.Connection)
+
+
+def test_init_db(app, tmpdir):
+    # GIVEN a Flask application configured for testing
+    db_file = tmpdir.join('test.db')
+    app.config['DATABASE'] = db_file
+    # WHEN initializing new database
+    with app.app_context():
+        manage_db.init_db()
+    # THEN database has all needed fields
+    db = sqlite3.connect(db_file)
+    cur = db.cursor()
+    data = cur.execute('SELECT * FROM subscribers')
+    columns = [column[0] for column in data.description]
+    assert {'id', 'access_token', 'refresh_token', 'expires_at'} == set(columns)
+
+    data = cur.execute('SELECT * FROM settings')
+    columns = [column[0] for column in data.description]
+    assert {'id', 'icon', 'aqi', 'humidity', 'wind', 'lan'} == set(columns)
+
+
+def test_init_db_command(app, monkeypatch):
+    monkeypatch.setattr(manage_db, 'init_db', lambda: None)
+    runner = app.test_cli_runner()
+    result = runner.invoke(args=['init-db'])
+    assert 'Initialized database.' in result.output
