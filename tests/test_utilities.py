@@ -9,7 +9,7 @@ import utilities
 
 LAT = 55.752388  # Moscow latitude default
 LON = 37.716457  # Moscow longitude default
-TIME = int(time.time() - 3600)
+TIME = int(time.time()) - 3600
 
 directions_to_try = [(0, 'N', 'С'), (7, 'N', 'С'), (11, 'N', 'С'), (12, 'NNE', 'ССВ'),
                      (33, 'NNE', 'ССВ'), (85, 'E', 'В'), (358, 'N', 'С'), (722, 'N', 'С')]

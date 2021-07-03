@@ -77,3 +77,26 @@ def test_strava_client_update_tokens(database, monkeypatch):
     assert actual_tokens.access_token == 'new_access_token'
     assert actual_tokens.refresh_token == 'new_refresh_token'
     assert actual_tokens.expires_at > time.time()
+
+
+@responses.activate
+def test_strava_client_update_tokens_failed(database, monkeypatch):
+    activity_id = 1
+    athlete_id = 2
+    responses.add(responses.POST, 'https://www.strava.com/oauth/token',
+                  body=json.dumps({'response': 'bad response'}))
+    monkeypatch.setattr(manage_db, 'get_db', lambda: database)
+    utilities.StravaClient(athlete_id, activity_id)
+    assert len(responses.calls) == 1
+    cur = database.cursor()
+    record = cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id}')
+    actual_tokens = manage_db.Tokens(*record.fetchone())
+    assert actual_tokens == tested_tokens2
+
+
+@responses.activate
+def test_get_tokens():
+    expected_tokens = {'access_token': 'test_access_token', 'refresh_token': 'test_refresh_token', 'expires_at': 1000}
+    responses.add(responses.POST, 'https://www.strava.com/oauth/token', body=json.dumps(expected_tokens))
+    actual_tokens = utilities.get_tokens(1)
+    assert actual_tokens == expected_tokens
