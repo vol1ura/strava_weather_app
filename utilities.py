@@ -18,11 +18,11 @@ class StravaClient:
         self.__activity_id = activity_id
         self.__session = requests.Session()
         tokens = manage_db.get_athlete(athlete_id)
-        tokens = self.update_tokens(tokens)
+        tokens = self._update_tokens(tokens)
         manage_db.add_athlete(tokens)
         self.__headers = {'Authorization': f"Bearer {tokens.access_token}"}
 
-    def update_tokens(self, tokens):
+    def _update_tokens(self, tokens):
         if tokens.expires_at < time.time():
             params = {
                 "client_id": os.environ.get('STRAVA_CLIENT_ID'),
@@ -175,7 +175,7 @@ def get_weather_description(lat, lon, w_time, s) -> str:
     :return: string with history weather data
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
-    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+    base_url = "https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang={s.lan}"
     try:
         w = requests.get(base_url).json()['current']
@@ -202,8 +202,7 @@ def get_air_description(lat, lon, lan='en') -> str:
     :return: string with air quality data
     """
     weather_api_key = os.environ.get('API_WEATHER_KEY')
-    base_url = f"http://api.openweathermap.org/data/2.5/air_pollution?" \
-               f"lat={lat}&lon={lon}&appid={weather_api_key}"
+    base_url = f"https://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={weather_api_key}"
     aq = requests.get(base_url).json()
     # Air Quality Index: 1 = Good, 2 = Fair, 3 = Moderate, 4 = Poor, 5 = Very Poor
     aqi = ['😃', '🙂', '😐', '🙁', '😨'][aq['list'][0]['main']['aqi'] - 1]
@@ -226,7 +225,7 @@ def get_weather_icon(lat, lon, w_time):
              '04d': '🌥', '04n': '🌥', '50d': '🌫', '50n': '🌫', '13d': '🌨', '13n': '🌨',
              '10n': '🌧', '10d': '🌦', '09d': '🌧', '09n': '🌧', '11d': '⛈', '11n': '⛈'}
     weather_api_key = os.environ.get('API_WEATHER_KEY')
-    base_url = f"https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
+    base_url = "https://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang=en"
     try:
         icon_code = requests.get(base_url).json()['current']['weather'][0]['icon']
