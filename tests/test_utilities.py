@@ -33,7 +33,7 @@ class StravaClientMock(ABC):
 
     @abstractmethod
     def get_activity(self):
-        return
+        pass
 
     @staticmethod
     def modify_activity(payload):
