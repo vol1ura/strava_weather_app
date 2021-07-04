@@ -21,9 +21,6 @@ class Result:
     def __init__(self, ok):
         self.ok = ok
 
-    def json(self):
-        return
-
 
 class StravaClientMock(ABC):
     """Class to mock StravaClient class from utilities module"""
@@ -73,6 +70,11 @@ def test_get_weather_icon():
     print(icon)
     assert isinstance(icon, str)
     assert len(icon) == 1
+
+
+def test_get_weather_icon_fail():
+    icon = utilities.get_weather_icon(LAT, LON, TIME - 6 * 25 * 3600)
+    assert icon == ''
 
 
 def test_get_weather_description():
