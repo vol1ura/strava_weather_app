@@ -77,7 +77,6 @@ def test_auth_page_wrong_keys(client, monkeypatch):
     auth_data_mock = {}
     monkeypatch.setattr(utilities, 'get_tokens', lambda arg: auth_data_mock)
     response = client.get(url_for('auth'), query_string={'code': 1})
-    # assert request.args['code'] == 1
     assert response.status_code == 500
 
 
@@ -89,7 +88,6 @@ def test_auth_page(client, monkeypatch):
     monkeypatch.setattr(manage_db, 'add_athlete', lambda arg: print)
     # WHEN the '/authorization_successful' page is requested (GET)
     response = client.get(url_for('auth'), query_string={'code': 1})
-    # assert request.args['code'] == 1
     # THEN check that the response is valid
     assert response.status_code == 200
     assert b'Test User' in response.data
@@ -182,8 +180,28 @@ def test_process_webhook_get_subscription_failed(monkeypatch, app):
     assert status == {'error': 'verification tokens does not match'}
 
 
-def test_webhook_post():
-    pass
+data_to_try = [
+    {'aspect_type': 'create', 'object_id': 10,
+     'object_type': 'activity', 'owner_id': 1, 'updates': {}},
+    {'aspect_type': 'update', 'object_id': 1,
+     'object_type': 'athlete', 'owner_id': 1, 'updates': {'authorized': 'false'}},
+    {'aspect_type': 'update', 'object_id': 10,
+     'object_type': 'activity', 'owner_id': 1, 'updates': {'title': 'Some test'}}
+]
+
+
+@pytest.mark.parametrize('data', data_to_try)
+def test_webhook_post(client, monkeypatch, data):
+    # GIVEN a Flask application configured for testing
+    monkeypatch.setattr(utilities, 'add_weather', lambda *args: None)
+    monkeypatch.setattr(manage_db, 'delete_athlete', lambda arg: None)
+    # WHEN the '/webhook/' page is requested (GET)
+    response = client.post(url_for('webhook'),
+                           headers={'Content-Type': 'application/json'},
+                           data=json.dumps(data))
+    # THEN check that the response is valid
+    assert response.status_code == 200
+    assert response.data == b"webhook ok"
 
 
 def test_http_404_handler(client):
