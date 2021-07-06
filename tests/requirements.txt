@@ -18,7 +18,6 @@ pyparsing==2.4.7
 pytest==6.2.4
 pytest-cov==2.12.1
 pytest-flask==1.2.0
-pytest-responsemock==1.0.1
 python-dotenv==0.17.1
 pytz==2020.5
 requests==2.25.1
