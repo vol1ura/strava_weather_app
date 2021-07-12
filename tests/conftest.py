@@ -3,6 +3,7 @@ import sqlite3
 import time
 
 import pytest
+from dotenv import load_dotenv
 
 import manage_db
 
@@ -39,9 +40,4 @@ def database(db_token, db_settings):
 @pytest.fixture(scope='session', autouse=True)
 def test_dot_env_mock():
     env_path = os.path.join(os.path.dirname(__file__).replace('/tests', ''), '.env')
-    if os.path.exists(env_path):
-        yield
-    else:
-        os.mknod(env_path)
-        yield
-        os.remove(env_path)
+    load_dotenv(env_path)

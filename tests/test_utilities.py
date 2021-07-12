@@ -29,7 +29,7 @@ class StravaClientMock(ABC):
         self.activity_id = activity_id
 
     @abstractmethod
-    def get_activity(self):
+    def get_activity(self):  # pragma: no cover
         pass
 
     @staticmethod

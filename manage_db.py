@@ -114,7 +114,7 @@ def init_db_command():
     click.echo('Initialized database.')
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     import os
     from dotenv import load_dotenv
 
