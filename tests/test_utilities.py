@@ -16,10 +16,20 @@ directions_to_try = [(0, 'N', 'С'), (7, 'N', 'С'), (11, 'N', 'С'), (12, 'NNE'
 directions_ids = [f'{d[0]:<3}: {d[1]:>3}' for d in directions_to_try]
 
 
-class Result:
-    """Class to mock http requests"""
-    def __init__(self, ok):
+class MockResponse:
+    """Class to mock http responses"""
+    def __init__(self, ok=True):
         self.ok = ok
+
+    @staticmethod
+    def json():
+        return {'current': {'weather': [{'description': 'weather description'}],
+                            'temp': -15.34,  # to check sign
+                            'feels_like': 22.63,  # to check roundness
+                            'humidity': 64,
+                            'wind_speed': 0.46,  # to test description with zero wind
+                            'wind_deg': 241}
+                }
 
 
 class StravaClientMock(ABC):
@@ -34,7 +44,7 @@ class StravaClientMock(ABC):
 
     @staticmethod
     def modify_activity(payload):
-        return Result(True) if isinstance(payload, dict) else Result(False)
+        return MockResponse(True) if isinstance(payload, dict) else MockResponse(False)
 
 
 activities_to_try = [{'manual': True}, {'trainer': True}, {'type': 'VirtualRide'},
@@ -85,6 +95,14 @@ def test_get_weather_description():
                         r'💦.\d{1,3}%, 💨.\d{1,2}м/с \(с \w{1,3}\).', descr)
 
 
+def test_get_weather_description_no_wind(monkeypatch):
+    monkeypatch.setattr('requests.get', lambda *args: MockResponse())
+    settings = manage_db.DEFAULT_SETTINGS
+    descr = utilities.get_weather_description(LAT, LON, TIME, settings)
+    print(descr)
+    assert re.fullmatch(r'Weather description, 🌡.-15°C \(по ощущениям 23°C\), 💦.64%, 💨.0м/с.', descr)
+
+
 def test_get_weather_description_fail():
     """openweatherapi supply only last 5 days weather data for free account"""
     settings = manage_db.DEFAULT_SETTINGS
@@ -127,6 +145,7 @@ def test_add_weather_success(monkeypatch, output_settings):
     - absence of start coordinates;
     - icon in activity name is already set.
     In all this cases all is OK."""
+
     class StravaClient(StravaClientMock):
         def get_activity(self):
             return {'start_latitude': LAT, 'start_longitude': LON, 'elapsed_time': 1,

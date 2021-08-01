@@ -186,8 +186,12 @@ def get_weather_description(lat, lon, w_time, s) -> str:
     description = f"{w['weather'][0]['description'].capitalize()}, " \
                   f"🌡\xa0{w['temp']:.0f}°C ({trnsl[s.lan][1]} {w['feels_like']:.0f}°C)"
     description += f", 💦\xa0{w['humidity']}%" if s.hum else ""
-    description += f", 💨\xa0{w['wind_speed']:.0f}{trnsl[s.lan][4]} " \
-                   f"({trnsl[s.lan][5]} {compass_direction(w['wind_deg'], s.lan)})." if s.wind else "."
+    if s.wind:
+        description += f", 💨\xa0{w['wind_speed']:.0f}{trnsl[s.lan][4]}"
+        if f"{w['wind_speed']:.0f}" != '0':
+            description += f" ({trnsl[s.lan][5]} {compass_direction(w['wind_deg'], s.lan)})."
+        else:
+            description += '.'
     return description
 
 
