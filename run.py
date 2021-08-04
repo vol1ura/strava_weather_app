@@ -124,5 +124,5 @@ def http_500_handler(error):
     return render_template('500.html'), 500
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     app.run()
