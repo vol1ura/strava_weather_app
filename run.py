@@ -2,7 +2,7 @@ import os
 from multiprocessing import Process
 from pprint import pprint
 
-from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify
+from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify, send_from_directory
 from flask_restful import reqparse
 
 import manage_db
@@ -107,6 +107,11 @@ def features():
 @app.route('/contacts/')
 def contacts():
     return render_template('contacts.html')
+
+
+@app.route('/robots.txt')
+def robots():
+    return send_from_directory('static', 'robots.txt')
 
 
 @app.errorhandler(404)

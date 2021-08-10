@@ -223,3 +223,13 @@ def test_http_405_handler(client):
     assert response.status_code == 302
     response = client.get(url_for('final'))  # GET when allowed only POST
     assert response.status_code == 302
+
+
+def test_robots_txt_page(client):
+    # GIVEN a Flask application configured for testing
+    # WHEN the '/robots.txt' page is requested (GET)
+    response = client.get('/robots.txt')
+    # THEN check that the response is valid
+    assert response.status_code == 200
+    assert b"User-agent: *" in response.data
+    assert b"Disallow: " in response.data

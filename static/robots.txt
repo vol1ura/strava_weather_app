@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /contacts*
+Disallow: /static/*.png
