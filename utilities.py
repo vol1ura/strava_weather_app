@@ -1,6 +1,7 @@
 import os
 import time
 import urllib.parse
+from json import JSONDecodeError
 
 import requests
 from dotenv import load_dotenv
@@ -43,7 +44,10 @@ class StravaClient:
         :return: dictionary with activity data
         """
         url = f'https://www.strava.com/api/v3/activities/{self.__activity_id}'
-        return self.__session.get(url, headers=self.__headers).json()
+        try:
+            return self.__session.get(url, headers=self.__headers).json()
+        except JSONDecodeError:
+            return {}
 
     def modify_activity(self, payload: dict):
         """Method can change UpdatableActivity parameters such that description, name, type, gear_id.
