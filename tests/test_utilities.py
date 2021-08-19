@@ -3,6 +3,7 @@ import time
 from abc import abstractmethod, ABC
 
 import pytest
+import responses
 
 import manage_db
 import utilities
@@ -130,6 +131,18 @@ def test_add_weather_bad_activity(strava_client_mock, monkeypatch):
     monkeypatch.setattr(utilities, 'get_weather_description', lambda *args: '')
     monkeypatch.setattr(utilities, 'get_weather_icon', lambda *args: 'icon')
     assert utilities.add_weather(0, 0) == 3
+
+
+@responses.activate
+def test_add_weather_bad_response(monkeypatch, db_token, database):
+    activity_id = 1
+    athlete_tokens = db_token[0]
+    responses.add(responses.GET, f'https://www.strava.com/api/v3/activities/{activity_id}', body='')
+    monkeypatch.setattr(manage_db, 'get_db', lambda: database)
+
+    return_code = utilities.add_weather(athlete_tokens.id, activity_id)
+    assert len(responses.calls) == 1
+    assert return_code == 3
 
 
 settings_to_try = [manage_db.DEFAULT_SETTINGS._replace(icon=1), manage_db.DEFAULT_SETTINGS._replace(icon=0),

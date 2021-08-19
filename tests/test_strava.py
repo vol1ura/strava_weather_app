@@ -23,6 +23,18 @@ def test_strava_client_get_activity(database, db_token, monkeypatch):
 
 
 @responses.activate
+def test_strava_client_get_activity_failed(database, db_token, monkeypatch):
+    activity_id = 1
+    athlete_tokens = db_token[0]
+    responses.add(responses.GET, f'https://www.strava.com/api/v3/activities/{activity_id}', body='')
+    monkeypatch.setattr(manage_db, 'get_db', lambda: database)
+    client = utilities.StravaClient(athlete_tokens.id, activity_id)
+    activity = client.get_activity()
+    assert responses.calls[0].request.headers['Authorization'] == f'Bearer {athlete_tokens.access_token}'
+    assert activity == {}
+
+
+@responses.activate
 def test_strava_client_modify_activity(database, db_token, monkeypatch):
     activity_id = 1
     athlete_tokens = db_token[0]
