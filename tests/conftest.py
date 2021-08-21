@@ -5,7 +5,7 @@ import time
 import pytest
 from dotenv import load_dotenv
 
-import manage_db
+from utils import manage_db
 
 
 @pytest.fixture

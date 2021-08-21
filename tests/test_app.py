@@ -5,8 +5,7 @@ import urllib.parse
 import pytest
 from flask import url_for
 
-import manage_db
-import utilities
+from utils import weather, manage_db, strava_helpers
 from run import app as site, process_webhook_get
 
 
@@ -75,7 +74,7 @@ def test_auth_page_abort(client):
 
 def test_auth_page_wrong_keys(client, monkeypatch):
     auth_data_mock = {}
-    monkeypatch.setattr(utilities, 'get_tokens', lambda arg: auth_data_mock)
+    monkeypatch.setattr(strava_helpers, 'get_tokens', lambda arg: auth_data_mock)
     response = client.get(url_for('auth'), query_string={'code': 1})
     assert response.status_code == 500
 
@@ -84,7 +83,7 @@ def test_auth_page(client, monkeypatch):
     # GIVEN a Flask application configured for testing
     auth_data_mock = {'athlete': {'firstname': 'Test', 'lastname': 'User', 'id': 1},
                       'access_token': 'test_AT', 'refresh_token': 'test_RT', 'expires_at': 'test_EA'}
-    monkeypatch.setattr(utilities, 'get_tokens', lambda arg: auth_data_mock)
+    monkeypatch.setattr(strava_helpers, 'get_tokens', lambda arg: auth_data_mock)
     monkeypatch.setattr(manage_db, 'add_athlete', lambda arg: print)
     # WHEN the '/authorization_successful' page is requested (GET)
     response = client.get(url_for('auth'), query_string={'code': 1})
@@ -138,14 +137,14 @@ def test_webhook_page_get(client, monkeypatch):
 
 
 def test_process_webhook_get_subscribed(monkeypatch):
-    monkeypatch.setattr(utilities, 'is_app_subscribed', lambda: True)
+    monkeypatch.setattr(strava_helpers, 'is_app_subscribed', lambda: True)
     status = process_webhook_get()
     assert status == {'status': 'You are already subscribed'}
 
 
 def test_process_webhook_get_subscription(monkeypatch, app):
     # GIVEN a Flask application configured for testing
-    monkeypatch.setattr(utilities, 'is_app_subscribed', lambda: False)
+    monkeypatch.setattr(strava_helpers, 'is_app_subscribed', lambda: False)
     monkeypatch.setenv('STRAVA_WEBHOOK_TOKEN', 'token_for_test')
     params = {'hub.mode': 'subscribe',
               'hub.verify_token': os.environ.get('STRAVA_WEBHOOK_TOKEN'),
@@ -160,7 +159,7 @@ def test_process_webhook_get_subscription(monkeypatch, app):
 
 def test_process_webhook_get_subscription_failed(monkeypatch, app):
     # GIVEN a Flask application configured for testing
-    monkeypatch.setattr(utilities, 'is_app_subscribed', lambda: False)
+    monkeypatch.setattr(strava_helpers, 'is_app_subscribed', lambda: False)
     monkeypatch.setenv('STRAVA_WEBHOOK_TOKEN', 'token_for_test')
     params = {'hub.mode': 'subscribe',
               'hub.verify_token': 'failed_token',
@@ -193,7 +192,7 @@ data_to_try = [
 @pytest.mark.parametrize('data', data_to_try)
 def test_webhook_post(client, monkeypatch, data):
     # GIVEN a Flask application configured for testing
-    monkeypatch.setattr(utilities, 'add_weather', lambda *args: None)
+    monkeypatch.setattr(weather, 'add_weather', lambda *args: None)
     monkeypatch.setattr(manage_db, 'delete_athlete', lambda arg: None)
     # WHEN the '/webhook/' page is requested (GET)
     response = client.post(url_for('webhook'),
@@ -233,3 +232,33 @@ def test_robots_txt_page(client):
     assert response.status_code == 200
     assert b"User-agent: *" in response.data
     assert b"Disallow: " in response.data
+
+
+def test_strava_api_errors_handler(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    def exception_mock():
+        from utils.exeptions import StravaAPIError
+        raise StravaAPIError('error')
+    # Suppose that exception raises when we process post request to webhook
+    monkeypatch.setattr('run.process_webhook_post', lambda *args: exception_mock())
+
+    # WHEN the '/webhook/' page is requested (POST)
+    response = client.post(url_for('webhook'))
+    # THEN check that the response is valid
+    assert response.status_code == 500
+    assert response.data == b"error"
+
+
+def test_weather_api_errors_handler(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    def exception_mock():
+        from utils.exeptions import WeatherAPIError
+        raise WeatherAPIError('error')
+    # Suppose that exception raises when we process post request to webhook
+    monkeypatch.setattr('run.process_webhook_post', lambda *args: exception_mock())
+
+    # WHEN the '/webhook/' page is requested (POST)
+    response = client.post(url_for('webhook'))
+    # THEN check that the response is valid
+    assert response.status_code == 500
+    assert response.data == b"error"

@@ -3,7 +3,7 @@ import sqlite3
 import pytest
 from flask import g
 
-import manage_db
+from utils import manage_db
 from run import app as site
 
 
