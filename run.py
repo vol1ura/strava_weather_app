@@ -1,12 +1,11 @@
 import os
 from multiprocessing import Process
-from pprint import pprint
 
 from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify, send_from_directory
 from flask_restful import reqparse
 
-import manage_db
-import utilities
+from utils import weather, manage_db, strava_helpers
+from utils.exeptions import StravaAPIError, WeatherAPIError
 
 app = Flask(__name__)
 
@@ -23,7 +22,7 @@ manage_db.init_app(app)
 @app.route('/')
 def index():
     redirect_uri = url_for('auth', _external=True)
-    url_to_get_code = utilities.make_link_to_get_code(redirect_uri)
+    url_to_get_code = strava_helpers.make_link_to_get_code(redirect_uri)
     return render_template('index.html', url_to_get_code=url_to_get_code)
 
 
@@ -46,7 +45,7 @@ def auth():
     code = request.values.get('code', None)
     if not code:
         return abort(500)
-    auth_data = utilities.get_tokens(code)
+    auth_data = strava_helpers.get_tokens(code)
     try:
         athlete = auth_data['athlete']['firstname'] + ' ' + auth_data['athlete']['lastname']
         tokens = manage_db.Tokens(auth_data['athlete']['id'], auth_data['access_token'],
@@ -76,9 +75,9 @@ def process_webhook_post():
     parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
     parser.add_argument('updates', type=dict, required=True)  # For de-auth, there is {"authorized": "false"}
     args = parser.parse_args()
-    pprint(args)  # TODO remove after debugging
+    app.logger.info(args)  # TODO remove after debugging
     if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
-        p = Process(target=utilities.add_weather, args=(args['owner_id'], args['object_id']))
+        p = Process(target=weather.add_weather, args=(args['owner_id'], args['object_id']))
         p.daemon = True
         p.start()
     if args['updates'].get('authorized', '') == 'false':
@@ -86,7 +85,7 @@ def process_webhook_post():
 
 
 def process_webhook_get():
-    if utilities.is_app_subscribed():
+    if strava_helpers.is_app_subscribed():
         return {'status': 'You are already subscribed'}
     req = request.values
     mode = req.get('hub.mode', '')
@@ -127,6 +126,12 @@ def http_405_handler(error):
 @app.errorhandler(500)
 def http_500_handler(error):
     return render_template('500.html'), 500
+
+
+@app.errorhandler(WeatherAPIError)
+@app.errorhandler(StravaAPIError)
+def api_errors_handler(error):
+    return 'error', 500
 
 
 if __name__ == '__main__':  # pragma: no cover
