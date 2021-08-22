@@ -4,8 +4,7 @@ import time
 import pytest
 import responses
 
-import utils.strava_client
-from utils import manage_db
+from utils import manage_db, strava_client
 from utils.exeptions import StravaAPIError
 
 
@@ -17,7 +16,7 @@ def test_strava_client_get_activity(database, db_token, monkeypatch):
                   f'https://www.strava.com/api/v3/activities/{activity_id}',
                   json={'athlete_id': athlete_tokens.id})
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
-    client = utils.strava_client.StravaClient(athlete_tokens.id, activity_id)
+    client = strava_client.StravaClient(athlete_tokens.id, activity_id)
     actitvity = client.get_activity()
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers['Authorization'] == f'Bearer {athlete_tokens.access_token}'
@@ -30,7 +29,7 @@ def test_strava_client_get_activity_failed(database, db_token, monkeypatch):
     athlete_tokens = db_token[0]
     responses.add(responses.GET, f'https://www.strava.com/api/v3/activities/{activity_id}', body='')
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
-    client = utils.strava_client.StravaClient(athlete_tokens.id, activity_id)
+    client = strava_client.StravaClient(athlete_tokens.id, activity_id)
     with pytest.raises(StravaAPIError):
         client.get_activity()
     assert len(responses.calls) == 1
@@ -43,10 +42,22 @@ def test_strava_client_modify_activity(database, db_token, monkeypatch):
     athlete_tokens = db_token[0]
     responses.add(responses.PUT, f'https://www.strava.com/api/v3/activities/{activity_id}', body='ok')
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
-    client = utils.strava_client.StravaClient(athlete_tokens.id, activity_id)
+    client = strava_client.StravaClient(athlete_tokens.id, activity_id)
     client.modify_activity({'description': 'test'})
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers['Authorization'] == f'Bearer {athlete_tokens.access_token}'
+
+
+@responses.activate
+def test_strava_client_modify_activity_failed(database, db_token, monkeypatch):
+    activity_id = 1
+    athlete_tokens = db_token[0]
+    responses.add(responses.PUT, f'https://www.strava.com/api/v3/activities/{activity_id}', status=500)
+    monkeypatch.setattr(manage_db, 'get_db', lambda: database)
+    client = strava_client.StravaClient(athlete_tokens.id, activity_id)
+    with pytest.raises(StravaAPIError):
+        client.modify_activity({'description': 'test'})
+    assert len(responses.calls) == 1
 
 
 @responses.activate
@@ -58,7 +69,7 @@ def test_strava_client_update_tokens(database, monkeypatch):
                                    'refresh_token': 'new_refresh_token',
                                    'expires_at': int(time.time()) + 100}))
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
-    utils.strava_client.StravaClient(athlete_id, activity_id)
+    strava_client.StravaClient(athlete_id, activity_id)
     assert len(responses.calls) == 1
     cur = database.cursor()
     record = cur.execute(f'SELECT * FROM subscribers WHERE id = {athlete_id}')
@@ -78,7 +89,7 @@ def test_strava_client_update_tokens_failed(database, db_token, monkeypatch):
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     # Try to update tokens
     with pytest.raises(StravaAPIError):
-        utils.strava_client.StravaClient(athlete_id, activity_id)
+        strava_client.StravaClient(athlete_id, activity_id)
     # Check that tokens has not modified
     assert len(responses.calls) == 1
     cur = database.cursor()
