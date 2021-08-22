@@ -4,7 +4,7 @@ from multiprocessing import Process
 from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify, send_from_directory
 from flask_restful import reqparse
 
-from utils import weather, manage_db, strava_helpers
+from utils import weather, manage_db, strava_helpers, git_helpers
 from utils.exeptions import StravaAPIError, WeatherAPIError
 
 app = Flask(__name__)
@@ -111,6 +111,15 @@ def contacts():
 @app.route('/robots.txt')
 def robots():
     return send_from_directory('static', 'robots.txt')
+
+
+@app.route('/update_server', methods=['POST'])
+def update_server():
+    x_hub_signature = request.headers.get('X-Hub-Signature')
+    if not git_helpers.is_valid_signature(x_hub_signature, request.data):
+        return jsonify(error='wrong signature')
+    git_helpers.pull()
+    return jsonify(message='Server successfully updated')
 
 
 @app.errorhandler(404)
