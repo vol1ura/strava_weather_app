@@ -20,9 +20,9 @@ def test_index_page(client):
     response = client.get(url_for('index'))
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert b"Weather conditions in your activities" in response.data
-    assert b"Try it!" in response.data
-    assert b"Connect with Strava" in response.data
+    assert b'Weather conditions in your activities' in response.data
+    assert b'Try it!' in response.data
+    assert b'Connect with Strava' in response.data
 
 
 def test_final_page_abort(client):
@@ -98,8 +98,8 @@ def test_features_page(client):
     response = client.get(url_for('features'))
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert b"Features" in response.data
-    assert b"Main features:" in response.data
+    assert b'Features' in response.data
+    assert b'Main features:' in response.data
 
 
 def test_contacts_page(client):
@@ -108,10 +108,10 @@ def test_contacts_page(client):
     response = client.get(url_for('contacts'))
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert b"Contacts" in response.data
-    assert b"https://www.strava.com/athletes/2843469" in response.data
-    assert b"https://www.instagram.com/urka_runner/" in response.data
-    assert b"https://github.com/vol1ura" in response.data
+    assert b'Contacts' in response.data
+    assert b'https://www.strava.com/athletes/2843469' in response.data
+    assert b'https://www.instagram.com/urka_runner/' in response.data
+    assert b'https://github.com/vol1ura' in response.data
 
 
 def test_webhook_page_post(client, monkeypatch):
@@ -121,7 +121,7 @@ def test_webhook_page_post(client, monkeypatch):
     response = client.post(url_for('webhook'))
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert b"webhook ok" in response.data
+    assert 'webhook ok' in response.data
 
 
 def test_webhook_page_get(client, monkeypatch):
@@ -200,7 +200,7 @@ def test_webhook_post(client, monkeypatch, data):
                            data=json.dumps(data))
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert response.data == b"webhook ok"
+    assert response.data == b'webhook ok'
 
 
 def test_http_404_handler(client):
@@ -209,7 +209,7 @@ def test_http_404_handler(client):
     response = client.get('/no_such_page/')
     # THEN check that the response return 404 status code and render error page for it
     assert response.status_code == 404
-    assert b"HTTP 404 Error" in response.data
+    assert b'HTTP 404 Error' in response.data
 
 
 def test_http_405_handler(client):
@@ -230,8 +230,8 @@ def test_robots_txt_page(client):
     response = client.get('/robots.txt')
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert b"User-agent: *" in response.data
-    assert b"Disallow: " in response.data
+    assert b'User-agent: *' in response.data
+    assert b'Disallow: ' in response.data
 
 
 def test_strava_api_errors_handler(client, monkeypatch):
@@ -246,7 +246,7 @@ def test_strava_api_errors_handler(client, monkeypatch):
     response = client.post(url_for('webhook'))
     # THEN check that the response is valid
     assert response.status_code == 500
-    assert response.data == b"error"
+    assert response.data == b'error'
 
 
 def test_weather_api_errors_handler(client, monkeypatch):
@@ -261,4 +261,48 @@ def test_weather_api_errors_handler(client, monkeypatch):
     response = client.post(url_for('webhook'))
     # THEN check that the response is valid
     assert response.status_code == 500
-    assert response.data == b"error"
+    assert response.data == b'error'
+
+
+def test_update_server_handler_success(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    from utils import git_helpers
+
+    def mock_is_valid_signature(sign, data):
+        print(data, sign)
+        return sign == '12345abc' and data == b'test'
+
+    monkeypatch.setattr(git_helpers, 'pull', lambda: None)
+    monkeypatch.setattr(git_helpers, 'is_valid_signature', mock_is_valid_signature)
+    # WHEN the '/update_server/' page is requested (POST)
+    response = client.post(url_for('update_server'), headers={'X-Hub-Signature': '12345abc'}, data='test')
+    # THEN check that the response is valid
+    assert response.status_code == 202
+    assert response.data == b'Server successfully updated'
+
+
+def test_update_server_handler_wrong(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    from utils import git_helpers
+
+    def mock_is_valid_signature(sign, data):
+        return not (sign == '12345abc' and data == b'test')
+
+    monkeypatch.setattr(git_helpers, 'pull', lambda: None)
+    monkeypatch.setattr(git_helpers, 'is_valid_signature', mock_is_valid_signature)
+    # WHEN the '/update_server/' page is requested (POST)
+    response = client.post(url_for('update_server'), headers={'X-Hub-Signature': '12345abc'}, data='test')
+    # THEN check that the response is valid
+    assert response.status_code == 406
+    assert response.data == b'wrong signature'
+
+
+@pytest.mark.skip
+def test_subscribers_handler(client, monkeypatch):
+    # GIVEN a Flask application configured for testing
+    monkeypatch.setattr(manage_db, 'get_subscribers_count', lambda: 1)
+    # WHEN the '/subscribers' page is requested (GET)
+    response = client.get('/subscribers')
+    # THEN check that the response is valid
+    assert response.status_code == 200
+    assert json.loads(response.data.decode('utf-8')) == {'count': 1}

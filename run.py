@@ -117,9 +117,9 @@ def robots():
 def update_server():
     x_hub_signature = request.headers.get('X-Hub-Signature')
     if not git_helpers.is_valid_signature(x_hub_signature, request.data):
-        return jsonify(error='wrong signature')
+        return 'wrong signature', 406
     git_helpers.pull()
-    return jsonify(message='Server successfully updated')
+    return 'Server successfully updated', 202
 
 
 @app.errorhandler(404)
