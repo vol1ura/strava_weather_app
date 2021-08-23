@@ -121,7 +121,7 @@ def test_webhook_page_post(client, monkeypatch):
     response = client.post(url_for('webhook'))
     # THEN check that the response is valid
     assert response.status_code == 200
-    assert 'webhook ok' in response.data
+    assert b'webhook ok' in response.data
 
 
 def test_webhook_page_get(client, monkeypatch):
