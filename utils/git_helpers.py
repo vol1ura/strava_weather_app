@@ -6,7 +6,7 @@ import git
 
 
 def pull():  # pragma: no cover
-    repo = git.Repo('/home/strava/strava_weather_app')
+    repo = git.Repo(os.getenv('APP_PATH'))
     repo.remotes.origin.pull()
 
 
