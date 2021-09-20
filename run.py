@@ -5,7 +5,7 @@ from flask import Flask, url_for, render_template, request, session, abort, redi
 from flask_restful import reqparse
 
 from utils import weather, manage_db, strava_helpers, git_helpers
-from utils.exeptions import StravaAPIError, WeatherAPIError
+from utils.exeptions import StravaAPIError
 
 app = Flask(__name__)
 
@@ -137,7 +137,6 @@ def http_500_handler(error):
     return render_template('500.html'), 500
 
 
-@app.errorhandler(WeatherAPIError)
 @app.errorhandler(StravaAPIError)
 def api_errors_handler(error):
     return 'error', 500

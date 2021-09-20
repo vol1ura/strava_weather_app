@@ -249,27 +249,11 @@ def test_strava_api_errors_handler(client, monkeypatch):
     assert response.data == b'error'
 
 
-def test_weather_api_errors_handler(client, monkeypatch):
-    # GIVEN a Flask application configured for testing
-    def exception_mock():
-        from utils.exeptions import WeatherAPIError
-        raise WeatherAPIError('error')
-    # Suppose that exception raises when we process post request to webhook
-    monkeypatch.setattr('run.process_webhook_post', lambda *args: exception_mock())
-
-    # WHEN the '/webhook/' page is requested (POST)
-    response = client.post(url_for('webhook'))
-    # THEN check that the response is valid
-    assert response.status_code == 500
-    assert response.data == b'error'
-
-
 def test_update_server_handler_success(client, monkeypatch):
     # GIVEN a Flask application configured for testing
     from utils import git_helpers
 
     def mock_is_valid_signature(sign, data):
-        print(data, sign)
         return sign == '12345abc' and data == b'test'
 
     monkeypatch.setattr(git_helpers, 'pull', lambda: None)

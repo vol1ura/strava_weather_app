@@ -78,8 +78,7 @@ def test_get_weather_icon():
 
 
 def test_get_weather_icon_fail():
-    with pytest.raises(WeatherAPIError):
-        weather.get_weather_icon(LAT, LON, TIME - 6 * 25 * 3600)
+    assert weather.get_weather_icon(LAT, LON, TIME - 6 * 25 * 3600) is None
 
 
 def test_get_weather_description():
@@ -101,17 +100,15 @@ def test_get_weather_description_no_wind(monkeypatch):
 def test_get_weather_description_failed():
     """openweatherapi supply only last 5 days weather data for free account, in other case we get exception"""
     settings = manage_db.DEFAULT_SETTINGS
-    with pytest.raises(WeatherAPIError):
-        weather.get_weather_description(LAT, LON, TIME - 6 * 24 * 3600, settings)
+    assert '' == weather.get_weather_description(LAT, LON, TIME - 6 * 24 * 3600, settings)
 
 
 @responses.activate
 def test_get_weather_description_bad_response():
     """Case when something wrong with openweatherapi response"""
-    responses.add(responses.GET, re.compile(r'http://api\.openweathermap\.org/data/2\.5/onecall/.*'), body='')
+    responses.add(responses.GET, re.compile(r'http://api\.openweathermap\.org/data/2\.5/onecall/.*'), body='error')
     settings = manage_db.DEFAULT_SETTINGS
-    with pytest.raises(WeatherAPIError):
-        weather.get_weather_description(LAT, LON, TIME, settings)
+    assert '' == weather.get_weather_description(LAT, LON, TIME, settings)
 
 
 def test_get_air_description():

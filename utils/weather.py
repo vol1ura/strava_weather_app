@@ -5,7 +5,6 @@ import requests
 from dotenv import load_dotenv
 
 from utils import manage_db
-from utils.exeptions import WeatherAPIError
 from utils.strava_client import StravaClient
 
 dotenv_path = os.path.join(os.path.dirname(__file__), '../.env')
@@ -39,7 +38,7 @@ def add_weather(athlete_id: int, activity_id: int):
     description = activity.get('description', '')
     description = '' if description is None else description.rstrip() + '\n'
     if '°C' in description:
-        print(f'Weather description for activity ID{activity_id} is already set.')
+        print(f'Weather description for activity ID={activity_id} is already set.')
         return  # ok, but no processing
 
     # Check starting time of activity. Convert time to integer Unix time, GMT
@@ -64,8 +63,8 @@ def add_weather(athlete_id: int, activity_id: int):
     if settings.icon:
         activity_title = activity.get('name')
         icon = get_weather_icon(lat, lon, activity_time)
-        if activity_title.startswith(icon):
-            return  # ok, but no processing
+        if activity_title.startswith(icon) or not icon:
+            return  # maybe ok, no processing
         payload = {'name': icon + ' ' + activity_title}
     else:
         weather_description = get_weather_description(lat, lon, activity_time, settings)
@@ -91,10 +90,13 @@ def get_weather_description(lat, lon, w_time, s) -> str:
     weather_api_key = os.environ.get('API_WEATHER_KEY')
     base_url = "http://api.openweathermap.org/data/2.5/onecall/timemachine?" \
                f"lat={lat}&lon={lon}&dt={w_time}&appid={weather_api_key}&units=metric&lang={s.lan}"
+    response = requests.get(base_url)
     try:
-        w = requests.get(base_url).json()['current']
+        w = response.json()['current']
     except(KeyError, ValueError):
-        raise WeatherAPIError(f'Weather request failed. User ID-{s.id} in ({lat},{lon}) at {w_time}.')
+        print(f'Error! Weather request failed. User ID-{s.id} in ({lat},{lon}) at {w_time}.')
+        print(f'OpenApiWeather response - code: {response.status_code}, body: {response.text}')
+        return ''
     trnsl = {'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
              'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']}
     description = f"{w['weather'][0]['description'].capitalize()}, " \
@@ -148,4 +150,5 @@ def get_weather_icon(lat, lon, w_time):
         icon_code = requests.get(base_url).json()['current']['weather'][0]['icon']
         return icons[icon_code]
     except(KeyError, ValueError):
-        raise WeatherAPIError(f'Weather request failed in ({lat},{lon}) at {w_time}.')
+        print(f'Weather request failed in ({lat},{lon}) at {w_time}.')
+        return
