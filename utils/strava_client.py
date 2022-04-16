@@ -4,7 +4,7 @@ import time
 import requests
 
 from utils import manage_db
-from utils.exeptions import StravaAPIError
+from utils.exceptions import StravaAPIError
 
 
 class StravaClient:

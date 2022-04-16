@@ -5,7 +5,7 @@ from flask import Flask, url_for, render_template, request, session, abort, redi
 from flask_restful import reqparse
 
 from utils import weather, manage_db, strava_helpers, git_helpers
-from utils.exeptions import StravaAPIError
+from utils.exceptions import StravaAPIError
 
 app = Flask(__name__)
 

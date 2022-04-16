@@ -5,7 +5,7 @@ import pytest
 import responses
 
 from utils import manage_db, strava_client
-from utils.exeptions import StravaAPIError
+from utils.exceptions import StravaAPIError
 
 
 @responses.activate
@@ -17,10 +17,10 @@ def test_strava_client_get_activity(database, db_token, monkeypatch):
                   json={'athlete_id': athlete_tokens.id})
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     client = strava_client.StravaClient(athlete_tokens.id, activity_id)
-    actitvity = client.get_activity()
+    activity = client.get_activity()
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers['Authorization'] == f'Bearer {athlete_tokens.access_token}'
-    assert actitvity['athlete_id'] == athlete_tokens.id
+    assert activity['athlete_id'] == athlete_tokens.id
 
 
 @responses.activate

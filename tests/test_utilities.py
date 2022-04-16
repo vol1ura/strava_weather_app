@@ -6,7 +6,7 @@ import pytest
 import responses
 
 from utils import weather, manage_db
-from utils.exeptions import StravaAPIError, WeatherAPIError
+from utils.exceptions import StravaAPIError, WeatherAPIError
 
 LAT = 55.752388  # Moscow latitude default
 LON = 37.716457  # Moscow longitude default

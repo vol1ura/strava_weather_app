@@ -237,7 +237,7 @@ def test_robots_txt_page(client):
 def test_strava_api_errors_handler(client, monkeypatch):
     # GIVEN a Flask application configured for testing
     def exception_mock():
-        from utils.exeptions import StravaAPIError
+        from utils.exceptions import StravaAPIError
         raise StravaAPIError('error')
     # Suppose that exception raises when we process post request to webhook
     monkeypatch.setattr('run.process_webhook_post', lambda *args: exception_mock())
