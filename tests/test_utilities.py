@@ -6,10 +6,10 @@ import pytest
 import responses
 
 from utils import weather, manage_db
-from utils.exceptions import StravaAPIError, WeatherAPIError
+from utils.exceptions import StravaAPIError
 
 LAT = 55.752388  # Moscow latitude default
-LON = 37.716457  # Moscow longitude default
+LNG = 37.716457  # Moscow longitude default
 TIME = int(time.time()) - 3600
 
 directions_to_try = [(0, 'N', 'С'), (7, 'N', 'С'), (11, 'N', 'С'), (12, 'NNE', 'ССВ'),
@@ -49,9 +49,8 @@ class StravaClientMock(ABC):
 
 
 activities_to_try = [{'manual': True}, {'trainer': True}, {'type': 'VirtualRide'},
-                     {'description': '0°C'}, {'description': ''}, {'start_latitude': 0}, {'start_longitude': 0},
-                     {'start_latitude': LAT, 'start_longitude': LON,
-                      'start_date': '2021-06-03T12:48:06Z', 'name': 'icon'}]
+                     {'description': '0°C'}, {'description': ''}, {'start_latlng': [0, LNG]}, {'start_latlng': [LAT, 0]},
+                     {'start_latlng': [LAT, LNG], 'start_date': '2021-06-03T12:48:06Z', 'name': 'icon'}]
 
 
 @pytest.fixture(params=activities_to_try)
@@ -71,19 +70,19 @@ def test_compass_direction(degree, direction_en, direction_ru):
 
 
 def test_get_weather_icon():
-    icon = weather.get_weather_icon(LAT, LON, TIME)
+    icon = weather.get_weather_icon(LAT, LNG, TIME)
     print(icon)
     assert isinstance(icon, str)
     assert len(icon) == 1
 
 
 def test_get_weather_icon_fail():
-    assert weather.get_weather_icon(LAT, LON, TIME - 6 * 25 * 3600) is None
+    assert weather.get_weather_icon(LAT, LNG, TIME - 6 * 25 * 3600) is None
 
 
 def test_get_weather_description():
     settings = manage_db.DEFAULT_SETTINGS
-    descr = weather.get_weather_description(LAT, LON, TIME, settings)
+    descr = weather.get_weather_description(LAT, LNG, TIME, settings)
     print(descr)
     assert re.fullmatch(r'(\w+\s?){1,3}, 🌡.-?\d{1,2}°C \(по ощущениям -?\d{1,2}°C\), '
                         r'💦.\d{1,3}%, 💨.\d{1,2}м/с \(с \w{1,3}\).', descr)
@@ -92,7 +91,7 @@ def test_get_weather_description():
 def test_get_weather_description_no_wind(monkeypatch):
     monkeypatch.setattr('requests.get', lambda *args: MockResponse())
     settings = manage_db.DEFAULT_SETTINGS
-    descr = weather.get_weather_description(LAT, LON, TIME, settings)
+    descr = weather.get_weather_description(LAT, LNG, TIME, settings)
     print(descr)
     assert re.fullmatch(r'Weather description, 🌡.-15°C \(по ощущениям 23°C\), 💦.64%, 💨.0м/с.', descr)
 
@@ -100,7 +99,7 @@ def test_get_weather_description_no_wind(monkeypatch):
 def test_get_weather_description_failed():
     """openweatherapi supply only last 5 days weather data for free account, in other case we get exception"""
     settings = manage_db.DEFAULT_SETTINGS
-    assert '' == weather.get_weather_description(LAT, LON, TIME - 6 * 24 * 3600, settings)
+    assert '' == weather.get_weather_description(LAT, LNG, TIME - 6 * 24 * 3600, settings)
 
 
 @responses.activate
@@ -108,11 +107,11 @@ def test_get_weather_description_bad_response():
     """Case when something wrong with openweatherapi response"""
     responses.add(responses.GET, re.compile(r'http://api\.openweathermap\.org/data/2\.5/onecall/.*'), body='error')
     settings = manage_db.DEFAULT_SETTINGS
-    assert '' == weather.get_weather_description(LAT, LON, TIME, settings)
+    assert '' == weather.get_weather_description(LAT, LNG, TIME, settings)
 
 
 def test_get_air_description():
-    description = weather.get_air_description(LAT, LON, lan='ru')
+    description = weather.get_air_description(LAT, LNG, lan='ru')
     print(description)
     assert re.fullmatch(r'\nВоздух . \d+\(PM2\.5\), \d+\(SO₂\), \d+\(NO₂\), \d+(\.\d)?\(NH₃\)\.', description)
 
@@ -161,7 +160,7 @@ def test_add_weather_success(monkeypatch, output_settings):
 
     class StravaClient(StravaClientMock):
         def get_activity(self):
-            return {'start_latitude': LAT, 'start_longitude': LON, 'elapsed_time': 1,
+            return {'start_latlng': [LAT, LNG], 'elapsed_time': 1,
                     'start_date': time.strftime('%Y-%m-%dT%H:%M:%SZ'), 'name': 'Activity name'}
 
     monkeypatch.setattr(weather, 'StravaClient', StravaClient)
