@@ -1,3 +1,4 @@
+import calendar
 import os
 import time
 
@@ -44,7 +45,7 @@ def add_weather(athlete_id: int, activity_id: int):
     # Check starting time of activity. Convert time to integer Unix time, GMT
     try:
         time_tuple = time.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
-        start_time = int(time.mktime(time_tuple))
+        start_time = int(calendar.timegm(time_tuple))
     except (KeyError, ValueError):
         print(f'WARNING: {int(time.time())} - Bad date format for activity ID={activity_id}. Use current time.')
         start_time = int(time.time()) - 3600  # if some problems with activity start time let's use time a hour ago
