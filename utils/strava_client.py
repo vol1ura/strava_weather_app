@@ -18,7 +18,8 @@ class StravaClient:
         self.__headers = {'Authorization': f"Bearer {tokens.access_token}"}
 
     def _update_tokens(self, tokens):
-        if tokens.expires_at > time.time():
+        print('tokens-1:', tokens)
+        if int(tokens.expires_at) > time.time():
             return tokens
 
         params = {

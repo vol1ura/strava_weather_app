@@ -3,12 +3,14 @@
 {% block title %}Home{% endblock%}
 
 {% block maintitle %}
-Weather conditions in your activities
+Free weather details for your Strava activities!
 {% endblock %}
 
 {% block body %}
-    <p class="lead">Try it! After clicking on the button, you will be redirected to the Strava login form.
-        It is necessary to leave the selected access rights for the application, otherwise it will not be able to
-        work correctly. You can cancel your subscription at any time.</p>
-    <p class="lead"><a href="{{ url_to_get_code }}" class="btn btn-lg btn-secondary">Connect with Strava</a></p>
+<div class="connect-btn">
+    <a href="{{ url_to_get_code }}">
+        <img src="/static/btn_strava_connectwith_orange.svg" width="250px">
+    </a>
+</div>
+<p>This is a 100% <a target="_self" href="https://github.com/nathanrooy/strava-weather-service/">open source</a>, privacy preserving service. No personal details are ever persisted. You can cancel your subscription at any time.</p>
 {% endblock %}

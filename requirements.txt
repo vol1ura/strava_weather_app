@@ -1,4 +1,6 @@
 Flask-RESTful>=0.3.9
 GitPython~=3.1.18
+gunicorn
+mysql-connector-python
 python-dotenv~=0.17
 requests>=2.25.1

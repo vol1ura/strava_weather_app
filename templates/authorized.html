@@ -3,45 +3,23 @@
 {% block title %}Authorized{% endblock %}
 
 {% block maintitle %}
-    Authorization OK
-{% endblock %}
-
-{% block nav %}
-    <a class="nav-link" href="/">Home</a>
-    <a class="nav-link" href="/features/">Features</a>
-    <a class="nav-link" href="/contacts/">Contacts</a>
+    Hello, {{ athlete }}!
 {% endblock %}
 
 
 {% block body %}
-    <h2>Hello, {{ athlete }}!</h2>
-    <p class="lead">App is connected to your Strava profile, now you can select additional metrics
-        to be added to your activities description. The temperature is always displayed by default.</p>
+    <p class="lead">App is now connected to your Strava profile. Select your desired units.</p>
     <form action="/final/" method="post">
-        <fieldset>
-            <legend>Select metrics</legend>
-            <label for="icon"><input id="mycheckbox" type="checkbox" name="icon">&nbsp;🌤 -
-                <strong>only</strong> pictogram <strong>in activity title;</strong></label>
-            <br/>
-            <div id="mycheckboxdiv">
-                <strong>in activity description:</strong><br/>
-                <label for="humidity"><input type="checkbox" name="humidity" checked>&nbsp;💦 humidity,</label>&nbsp;&nbsp;
-                <label for="wind"><input type="checkbox" name="wind" checked>&nbsp;💨 wind,</label>&nbsp;&nbsp;
-                <label for="aqi"><input type="checkbox" name="aqi" checked>&nbsp;🌱 air&nbsp;quality.</label><br/>
-                <label for="lan">Select language:
-                    <select id="lan" name="lan">
-                        <option value="ru" selected>русский</option>
-                        <option value="en">english</option>
+        <fieldset style="margin-bottom:2rem;">
+            <legend>Select options</legend>
+            <div class="user-selection">
+                <label for="units">Units:
+                    <select id="units" name="units">
+                        <option value="imperial" selected>imperial</option>
+                        <option value="metric">metric</option>
                     </select></label><br/>
             </div>
-            <br/>
-            <input type="submit" value="Save settings">
         </fieldset>
+        <input type="submit" value="Save settings" style="margin-bottom:1rem">
     </form>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script type="text/javascript">
-        $('#mycheckbox').change(function () {
-            $('#mycheckboxdiv').toggle();
-        });
-    </script>
 {% endblock %}

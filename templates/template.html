@@ -3,90 +3,128 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="description"
-          content="Web application adds weather information to all your Strava activities for the past four days.">
+    <meta name="description" content="Free weather information for your Strava activities">
 
-    <title>Strava Weather App - {% block title %}{% endblock %}</title>
+    <title>Strava Weather Service</title>
 
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css"
-          integrity="sha384-TX8t27EcRE3e/ihU7zmQxVncDAy5uIKz4rEkgIXeMed4M0jlfIDPvg6uqKI2xXr2" crossorigin="anonymous">
     <!-- Favicons -->
     <link rel="icon" href="/static/favicon-16x16.png" sizes="16x16" type="image/png">
-    <meta name="theme-color" content="#563d7c">
 
     <style>
-        .bd-placeholder-img {
-            font-size: 1.125rem;
-            text-anchor: middle;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+        /* roboto-regular - latin */
+        @font-face {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 400;
+        src: url('/static/roboto-v30-latin-regular.eot'); /* IE9 Compat Modes */
+        src: local(''),
+            url('/static/roboto-v30-latin-regular.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+            url('/static/roboto-v30-latin-regular.woff2') format('woff2'), /* Super Modern Browsers */
+            url('/static/roboto-v30-latin-regular.woff') format('woff'), /* Modern Browsers */
+            url('/static/roboto-v30-latin-regular.ttf') format('truetype'), /* Safari, Android, iOS */
+            url('/static/roboto-v30-latin-regular.svg#Roboto') format('svg'); /* Legacy iOS */
         }
 
-        @media (min-width: 768px) {
-            .bd-placeholder-img-lg {
-                font-size: 3.5rem;
-            }
+        /* roboto-700 - latin */
+        @font-face {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 700;
+        src: url('/static/roboto-v30-latin-700.eot'); /* IE9 Compat Modes */
+        src: local(''),
+            url('/static/roboto-v30-latin-700.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+            url('/static/roboto-v30-latin-700.woff2') format('woff2'), /* Super Modern Browsers */
+            url('/static/roboto-v30-latin-700.woff') format('woff'), /* Modern Browsers */
+            url('/static/roboto-v30-latin-700.ttf') format('truetype'), /* Safari, Android, iOS */
+            url('/static/roboto-v30-latin-700.svg#Roboto') format('svg'); /* Legacy iOS */
         }
 
-        .strava-badge- {
-            display: inline-block;
-            height: 16px;
+        html, body {
+            height: 100%;
+            font-family: 'Roboto';
+            color: #fff;
         }
 
-        .strava-badge- img {
-            visibility: hidden;
-            height: 16px;
+        body {
+            margin: 0;
+            background-image: url("/static/pexels-pixabay-529621.jpg");
+            background-size: cover;
+            background-position: center center;
         }
 
-        .strava-badge-:hover {
-            background-position: 0 -30px;
+        .content {
+            max-width: 400px;
+            min-width:300px; 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            background-color: rgba(0,0,0,0.5);
+            padding-top:0.5rem;
+            padding-bottom:1rem;
+            padding-left:2rem;
+            padding-right:2rem;
+            border-radius: 1rem;
         }
 
-        .strava-badge-follow {
-            height: 16px;
-            width: 16px;
-            background: url(/static/echelon-sprite-16.png) no-repeat 0 0;
+        .content h1{
+            font-weight: 700;
+            font-size: 2.3rem;
         }
+
+        .content p {
+            font-size:1rem;
+            font-weight: 400;
+            line-height: 1.3rem;
+        }
+
+        .connect-btn {
+            margin-bottom:2rem;
+            margin-top:3rem;
+            text-align: center;
+        }
+
+        .user-selection {
+            padding-top:1rem;
+            padding-bottom:1rem;
+        }
+
+        label {
+            font-weight: 400;
+            font-family: 'Roboto';
+            color:#fff;
+        }
+
+        select {
+            font-weight: 400;
+            font-family: 'Roboto';
+            color:#000;
+        }
+
+        input {
+            font-weight: 400;
+            font-family: 'Roboto';
+            color:#000;
+        }
+        a,
+        a:focus,
+        a:hover {
+        color: #fff;
+        }
+
     </style>
-    <link href="/static/cover.css" rel="stylesheet">
 </head>
 
-<body class="text-center">
+<body>
+    <div class="container">
+        <main class="content">
+            <h1>{% block maintitle %}The title of my page{% endblock %}</h1>
+            {% block body %}  Add info here  {% endblock %}
+        </main>
 
-<div class="cover-container d-flex w-100 h-100 p-3 mx-auto flex-column">
-    <header class="masthead mb-auto">
-        <div class="inner">
-            <h3 class="masthead-brand">{% block headtitle %}Strava Weather App{% endblock %}</h3>
-            <nav class="nav nav-masthead justify-content-center">
-                {% block nav %}
-                    <a class="nav-link active" href="/">Home</a>
-                    <a class="nav-link" href="/features/">Features</a>
-                    <a class="nav-link" href="/contacts/">Contacts</a>
-                {% endblock %}
-            </nav>
-        </div>
-    </header>
-
-    <main class="inner cover">
-        <h1 class="cover-heading">{% block maintitle %}The title of my page{% endblock %}</h1>
-
-        {% block body %}  Add info here  {% endblock %}
-
-    </main>
-
-    <footer class="mastfoot mt-auto">
-        <div class="inner">
-            <p>Application developed by <a href="https://www.instagram.com/urka_runner/">@urka_runner</a><br>
-                <a style="display:inline-block;background-color:#FC5200;color:#fff;padding:5px 10px 5px 30px;font-size:11px;font-family:Helvetica, Arial, sans-serif;white-space:nowrap;text-decoration:none;background-repeat:no-repeat;background-position:10px center;border-radius:3px;background-image:url('/static/logo-strava-echelon.png')"
-                   href='http://strava.com/athletes/2843469' target="_blank">
-                    Follow my <img src='/static/logo-strava.png' alt='Strava'
-                                   style='margin-left:2px;vertical-align:text-bottom' height="13" width="51"/>
-                </a></p>
-        </div>
-    </footer>
-</div>
+        <footer class="footer">
+        </footer>
+    </div>
 </body>
 </html>

@@ -4,20 +4,20 @@ from multiprocessing import Process
 from flask import Flask, url_for, render_template, request, session, abort, redirect, jsonify, send_from_directory
 from flask_restful import reqparse
 
-from utils import weather, manage_db, strava_helpers, git_helpers
+from utils import weather, manage_db, strava_helpers, git_helpers, env_check
 from utils.exceptions import StravaAPIError
 
-app = Flask(__name__)
 
+# check that all necessary environmental vars have been set...
+env_check.check_env_vars()
+
+app = Flask(__name__)
 app.config.from_mapping(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_HTTPONLY=True,
-    SESSION_COOKIE_SAMESITE='Lax',
+    SESSION_COOKIE_SAMESITE="None",
     SECRET_KEY=os.environ.get('SECRET_KEY'),
-    DATABASE=os.path.join(app.root_path, os.environ.get('DATABASE'))
 )
-manage_db.init_app(app)
-
 
 @app.route('/')
 def index():
@@ -30,12 +30,7 @@ def index():
 def final():
     if 'id' not in session:
         return abort(500)
-    settings = manage_db.Settings(session['id'],
-                                  1 if 'icon' in request.values else 0,
-                                  1 if 'humidity' in request.values else 0,
-                                  1 if 'wind' in request.values else 0,
-                                  1 if 'aqi' in request.values else 0,
-                                  request.values.get('lan', 'ru'))
+    settings = manage_db.Settings(session['id'], request.values.get('units', 'imperial'))
     manage_db.add_settings(settings)
     return render_template('final.html', athlete=session['athlete'])
 
@@ -48,8 +43,10 @@ def auth():
     auth_data = strava_helpers.get_tokens(code)
     try:
         athlete = auth_data['athlete']['firstname'] + ' ' + auth_data['athlete']['lastname']
-        tokens = manage_db.Tokens(auth_data['athlete']['id'], auth_data['access_token'],
-                                  auth_data['refresh_token'], auth_data['expires_at'])
+        tokens = manage_db.Tokens(
+            auth_data['athlete']['id'], auth_data['access_token'],
+            auth_data['refresh_token'], auth_data['expires_at']
+        )
     except KeyError:
         return abort(500)
     manage_db.add_athlete(tokens)
@@ -69,13 +66,13 @@ def webhook():
 
 def process_webhook_post():
     parser = reqparse.RequestParser()
-    parser.add_argument('owner_id', type=int, required=True)  # athlete's ID
+    parser.add_argument('owner_id', type=int, required=True)     # athlete's ID
     parser.add_argument('object_type', type=str, required=True)  # we need "activity" here
-    parser.add_argument('object_id', type=int, required=True)  # activity's ID
-    parser.add_argument('aspect_type', type=str, required=True)  # Always "create," "update," or "delete."
-    parser.add_argument('updates', type=dict, required=True)  # For de-auth, there is {"authorized": "false"}
+    parser.add_argument('object_id', type=int, required=True)    # activity's ID
+    parser.add_argument('aspect_type', type=str, required=True)  # always "create," "update," or "delete."
+    parser.add_argument('updates', type=dict, required=True)     # for de-auth, there is {"authorized": "false"}
     args = parser.parse_args()
-    app.logger.info(args)  # TODO remove after debugging
+    app.logger.info(args)
     if args['aspect_type'] == 'create' and args['object_type'] == 'activity':
         p = Process(target=weather.add_weather, args=(args['owner_id'], args['object_id']))
         p.daemon = True
@@ -142,5 +139,5 @@ def api_errors_handler(error):
     return 'error', 500
 
 
-if __name__ == '__main__':  # pragma: no cover
-    app.run()
+if __name__ == '__main__':
+    app.run(debug=True, port=os.getenv("PORT", default=5000))
