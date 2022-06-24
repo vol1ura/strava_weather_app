@@ -281,7 +281,6 @@ def test_update_server_handler_wrong(client, monkeypatch):
     assert response.data == b'wrong signature'
 
 
-@pytest.mark.skip
 def test_subscribers_handler(client, monkeypatch):
     # GIVEN a Flask application configured for testing
     monkeypatch.setattr(manage_db, 'get_subscribers_count', lambda: 1)

@@ -113,6 +113,11 @@ def robots():
     return send_from_directory('static', 'robots.txt')
 
 
+@app.route('/subscribers')
+def subscribers():
+    return {'count': manage_db.get_subscribers_count()}
+
+
 @app.route('/update_server', methods=['POST'])
 def update_server():
     x_hub_signature = request.headers.get('X-Hub-Signature')
