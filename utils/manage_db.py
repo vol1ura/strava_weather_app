@@ -80,7 +80,8 @@ def get_subscribers_count():
     """
     db = get_db()
     cur = db.cursor()
-    return cur.execute('SELECT COUNT(*) FROM subscribers').fetchone()
+    result = cur.execute('SELECT COUNT(*) FROM subscribers').fetchone()
+    return result[0]
 
 
 
