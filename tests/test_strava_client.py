@@ -17,7 +17,7 @@ def test_strava_client_get_activity(database, db_token, monkeypatch):
                   json={'athlete_id': athlete_tokens.id})
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     client = strava_client.StravaClient(athlete_tokens.id, activity_id)
-    activity = client.get_activity()
+    activity = client.get_activity
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers['Authorization'] == f'Bearer {athlete_tokens.access_token}'
     assert activity['athlete_id'] == athlete_tokens.id
@@ -31,7 +31,7 @@ def test_strava_client_get_activity_failed(database, db_token, monkeypatch):
     monkeypatch.setattr(manage_db, 'get_db', lambda: database)
     client = strava_client.StravaClient(athlete_tokens.id, activity_id)
     with pytest.raises(StravaAPIError):
-        client.get_activity()
+        client.get_activity
     assert len(responses.calls) == 1
     assert responses.calls[0].request.headers['Authorization'] == f'Bearer {athlete_tokens.access_token}'
 

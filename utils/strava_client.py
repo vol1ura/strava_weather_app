@@ -34,14 +34,18 @@ class StravaClient:
         except(KeyError, ValueError):
             raise StravaAPIError(f'Failed to refresh token ID={tokens.id}. Athlete ID={self.__athlete_id}.')
 
-    def get_activity(self):
+    @property
+    def __activity_url(self) -> str:
+        return f'https://www.strava.com/api/v3/activities/{self.__activity_id}'
+
+    @property
+    def get_activity(self) -> dict:
         """Get information about activity
 
         :return: dictionary with activity data
         """
-        url = f'https://www.strava.com/api/v3/activities/{self.__activity_id}'
         try:
-            return self.__session.get(url, headers=self.__headers).json()
+            return self.__session.get(self.__activity_url, headers=self.__headers).json()
         except ValueError:
             raise StravaAPIError(f'Failed to get activity ID={self.__activity_id}. Athlete ID={self.__athlete_id}.')
 
@@ -52,7 +56,5 @@ class StravaClient:
         :param payload: dictionary with keys description, name, type, gear_id, trainer, commute
         :return: dictionary with updated activity parameters
         """
-        url = f'https://www.strava.com/api/v3/activities/{self.__activity_id}'
-        result = self.__session.put(url, headers=self.__headers, data=payload)
-        if not result.ok:
+        if not self.__session.put(self.__activity_url, headers=self.__headers, data=payload).ok:
             raise StravaAPIError(f'Failed modify activity ID={self.__activity_id}. Athlete ID={self.__athlete_id}')
