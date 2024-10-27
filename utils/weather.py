@@ -72,18 +72,22 @@ def add_weather(athlete_id: int, activity_id: int):
     if settings.icon:
         activity_title = activity.get('name')
         icon = get_weather_icon(lat, lon, activity_time)
-        if activity_title.startswith(icon) or not icon:
+        if not icon or activity_title.startswith(icon):
             return  # maybe ok, no processing
         payload = {'name': icon + ' ' + activity_title}
     else:
         weather_description = get_weather_description(lat, lon, activity_time, settings)
+        print('WEATHER DESCRIPTION:', weather_description)
 
         # Add air quality only if user set this option and time of activity uploading is appropriate!
-        if settings.aqi and (start_time + elapsed_time + timedelta(hours=2) > datetime.now(timezone.utc)):
+        if settings.aqi and \
+            (start_time + elapsed_time + timedelta(hours=2) > datetime.now(timezone.utc).replace(tzinfo=None)):
             air_conditions = get_air_description(lat, lon, settings.lan)
+            print('AIR CONDITIONS:', air_conditions)
         else:
             air_conditions = ''
         payload = {'description': description + weather_description + air_conditions}
+        print('DESCRIPTION FOR STRAVA:', payload)
     strava.modify_activity(payload)
 
 
@@ -143,7 +147,11 @@ def get_air_description(lat, lon, lan='en') -> str:
     :param lan: language 'ru' or 'en' by default
     :return: string with air quality data
     """
-    aq = air_info({ 'q': f'{lat},{lon}', 'lang': lan })
+    try:
+        aq = air_info({ 'q': f'{lat},{lon}', 'lang': lan })
+    except KeyError:
+        print(f'ERROR: failed to GET air info at ({lat},{lon})')
+        return ''
     # Air Quality Index: 1 = Good, 2 = Moderate, 3 = Unhealthy for sensitive, 4 = Unhealthy, 5 = Very Poor, 6 = Hazardous
     aqi = ['😃', '🙂', '😐', '🙁', '😨', '🤢'][aq['us-epa-index'] - 1]
     air = {'ru': 'Воздух', 'en': 'Air'}
@@ -171,5 +179,5 @@ def get_weather_icon(lat, lon, timestamp):
         )['condition']['code']
         return ICONS[icon_code]
     except(KeyError, ValueError):
-        print(f'Weather request failed in ({lat},{lon}) at {timestamp}.')
+        print(f'ERROR! Weather request failed in ({lat},{lon}) at {timestamp}.')
         return
