@@ -10,15 +10,18 @@ from utils.strava_client import StravaClient
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '../.env'))
 
+
 BASE_URL = 'https://api.weatherapi.com/v1'
 API_KEY = os.environ.get('API_WEATHER_KEY')
 PHRASES = {
-    'ru': ['Погода', 'по ощущениям', 'влажность', 'ветер', 'м/с', 'с'],
-    'en': ['Weather', 'feels like', 'humidity', 'wind', 'm/s', 'from']
+    'ru': ['по ощущениям', 'м/с', 'с'],
+    'en': ['feels like', 'm/s', 'from']
 }
-ICONS = {1000: '☀️', '01d': '🌄', '01n': '🌙', 1003: '🌤', 1006: '☁', 1006: '☁', 1030: '☁',
-            '04d': '🌥', '04n': '🌥', 1135: '🌫', 1147: '🌫', 1069: '🌨', 1066: '🌨',
-            1063: '🌧', 1072: '🌦', '09d': '🌧', '09n': '🌧', '11d': '⛈', '11n': '⛈'}
+ICONS = {
+    1000: '☀️', '01d': '🌄', '01n': '🌙', 1003: '🌤', 1006: '☁', 1006: '☁', 1030: '☁',
+    '04d': '🌥', '04n': '🌥', 1135: '🌫', 1147: '🌫', 1069: '🌨', 1066: '🌨',
+    1063: '🌧', 1072: '🌦', '09d': '🌧', '09n': '🌧', '11d': '⛈', '11n': '⛈'
+}
 
 
 def compass_direction(degree: int, lan='en') -> str:
@@ -61,10 +64,10 @@ def add_weather(athlete_id: int, activity_id: int):
     elapsed_time = timedelta(seconds=activity.get('elapsed_time', 0))
     activity_time = start_time + elapsed_time // 2 # in the middle of activity
 
-    lat, lon = activity.get('start_latlng', [None, None])
-
-    if not (lat and lon):
-        print(f'WARNING: No start geo position for ID={activity_id}, T={start_time}')
+    try:
+        lat, lon = activity['start_latlng']
+    except (KeyError, TypeError):
+        print(f'WARNING: No start geo position for activity ID={activity_id}, T={start_time}')
         return  # ok, but no processing
 
     settings = manage_db.get_settings(athlete_id)
@@ -77,17 +80,13 @@ def add_weather(athlete_id: int, activity_id: int):
         payload = {'name': icon + ' ' + activity_title}
     else:
         weather_description = get_weather_description(lat, lon, activity_time, settings)
-        print('WEATHER DESCRIPTION:', weather_description)
-
         # Add air quality only if user set this option and time of activity uploading is appropriate!
         if settings.aqi and \
             (start_time + elapsed_time + timedelta(hours=2) > datetime.now(timezone.utc).replace(tzinfo=None)):
             air_conditions = get_air_description(lat, lon, settings.lan)
-            print('AIR CONDITIONS:', air_conditions)
         else:
             air_conditions = ''
         payload = {'description': description + weather_description + air_conditions}
-        print('DESCRIPTION FOR STRAVA:', payload)
     strava.modify_activity(payload)
 
 
@@ -127,12 +126,12 @@ def get_weather_description(lat, lon, timestamp, s) -> str:
         return ''
     t = PHRASES[s.lan]
     description = f"{w['condition']['text'].capitalize()}, " \
-                  f"🌡\xa0{w['temp_c']:.0f}°C ({t[1]} {w['feelslike_c']:.0f}°C)"
+                  f"🌡\xa0{w['temp_c']:.0f}°C ({t[0]} {w['feelslike_c']:.0f}°C)"
     description += f", 💦\xa0{w['humidity']}%" if s.hum else ""
     if s.wind:
-        description += f", 💨\xa0{w['wind_kph']:.0f}{t[4]}"
+        description += f", 💨\xa0{w['wind_kph']:.0f}{t[1]}"
         if f"{w['wind_kph']:.0f}" != '0':
-            description += f" ({t[5]} {compass_direction(w['wind_degree'], s.lan)})."
+            description += f" ({t[2]} {compass_direction(w['wind_degree'], s.lan)})."
         else:
             description += '.'
     return description
@@ -179,5 +178,5 @@ def get_weather_icon(lat, lon, timestamp):
         )['condition']['code']
         return ICONS[icon_code]
     except(KeyError, ValueError):
-        print(f'ERROR! Weather request failed in ({lat},{lon}) at {timestamp}.')
+        print(f'ERROR: failed to GET weather in ({lat},{lon}) at {timestamp}.')
         return

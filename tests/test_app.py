@@ -1,8 +1,8 @@
 import json
 import os
+import pytest
 import urllib.parse
 
-import pytest
 from flask import url_for
 
 from utils import weather, manage_db, strava_helpers
@@ -180,12 +180,9 @@ def test_process_webhook_get_subscription_failed(monkeypatch, app):
 
 
 data_to_try = [
-    {'aspect_type': 'create', 'object_id': 10,
-     'object_type': 'activity', 'owner_id': 1, 'updates': {}},
-    {'aspect_type': 'update', 'object_id': 1,
-     'object_type': 'athlete', 'owner_id': 1, 'updates': {'authorized': 'false'}},
-    {'aspect_type': 'update', 'object_id': 10,
-     'object_type': 'activity', 'owner_id': 1, 'updates': {'title': 'Some test'}}
+    {'aspect_type': 'create', 'object_id': 10, 'object_type': 'activity', 'owner_id': 1, 'updates': {}},
+    {'aspect_type': 'update', 'object_id': 1, 'object_type': 'athlete', 'owner_id': 1, 'updates': {'authorized': 'false'}},
+    {'aspect_type': 'update', 'object_id': 10, 'object_type': 'activity', 'owner_id': 1, 'updates': {'title': 'Some test'}}
 ]
 
 
@@ -195,9 +192,7 @@ def test_webhook_post(client, monkeypatch, data):
     monkeypatch.setattr(weather, 'add_weather', lambda *args: None)
     monkeypatch.setattr(manage_db, 'delete_athlete', lambda arg: None)
     # WHEN the '/webhook/' page is requested (GET)
-    response = client.post(url_for('webhook'),
-                           headers={'Content-Type': 'application/json'},
-                           data=json.dumps(data))
+    response = client.post(url_for('webhook'), headers={'Content-Type': 'application/json'}, data=json.dumps(data))
     # THEN check that the response is valid
     assert response.status_code == 200
     assert response.data == b'webhook ok'

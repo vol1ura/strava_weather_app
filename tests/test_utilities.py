@@ -1,11 +1,11 @@
 import re
 import time
 
-from abc import abstractmethod, ABC
-from datetime import datetime, timezone, timedelta
+from abc import ABC
+from datetime import datetime, timedelta
 
 import pytest
-# import responses
+import responses
 
 from utils import weather, manage_db
 from utils.exceptions import StravaAPIError
@@ -26,13 +26,20 @@ class MockResponse:
 
     @staticmethod
     def json():
-        return {'current': {'weather': [{'description': 'weather description'}],
-                            'temp': -15.34,  # to check sign
-                            'feels_like': 22.63,  # to check roundness
-                            'humidity': 64,
-                            'wind_speed': 0.46,  # to test description with zero wind
-                            'wind_deg': 241}
-                }
+        return {
+            'forecast': {
+                'forecastday': [{
+                    'hour': [{
+                        'condition': {'text': 'weather description'},
+                        'temp_c': -15.34,  # to check sign
+                        'feelslike_c': 22.63,  # to check roundness
+                        'humidity': 64,
+                        'wind_kph': 0.46,  # to test description with zero wind
+                        'wind_degree': 241
+                    }]
+                }]
+            }
+        }
 
 
 class StravaClientMock(ABC):
@@ -95,16 +102,10 @@ def test_get_weather_description_no_wind(monkeypatch):
     assert re.fullmatch(r'Weather description, 🌡.-15°C \(по ощущениям 23°C\), 💦.64%, 💨.0м/с.', descr)
 
 
-def test_get_weather_description_failed():
-    """openweatherapi supply only last 5 days weather data for free account, in other case we get exception"""
-    settings = manage_db.DEFAULT_SETTINGS
-    assert '' == weather.get_weather_description(LAT, LNG, TIME - timedelta(days=6), settings)
-
-
-# @responses.activate
+@responses.activate
 def test_get_weather_description_bad_response():
     """Case when something wrong with openweatherapi response"""
-    responses.add(responses.GET, re.compile(r'http://api\.openweathermap\.org/data/2\.5/onecall/.*'), body='error')
+    responses.add(responses.GET, re.compile(r'https://api\.weatherapi.com/v1/history\.json\?.*'), body='error')
     settings = manage_db.DEFAULT_SETTINGS
     assert '' == weather.get_weather_description(LAT, LNG, TIME, settings)
 
@@ -131,7 +132,7 @@ def test_add_weather_bad_activity(strava_client_mock, monkeypatch):
     assert weather.add_weather(0, 0) is None
 
 
-# @responses.activate
+@responses.activate
 def test_add_weather_bad_response(monkeypatch, db_token, database):
     activity_id = 1
     athlete_tokens = db_token[0]
