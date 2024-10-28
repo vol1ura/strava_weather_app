@@ -1,6 +1,6 @@
 [![Quality&Tests](https://github.com/vol1ura/strava_weather_app/actions/workflows/python-app.yml/badge.svg)](https://github.com/vol1ura/strava_weather_app/actions/workflows/python-app.yml)
 [![codecov](https://codecov.io/gh/vol1ura/strava_weather_app/branch/master/graph/badge.svg)](https://codecov.io/gh/vol1ura/strava_weather_app)
-[![Code Style](https://img.shields.io/badge/Code%20Style-PEP%208-blueviolet)](https://www.python.org/dev/peps/pep-0008/) 
+[![Code Style](https://img.shields.io/badge/Code%20Style-PEP%208-blueviolet)](https://www.python.org/dev/peps/pep-0008/)
 ![W3C Validation](https://img.shields.io/w3c-validation/html?targetUrl=http%3A%2F%2Fstrava.pythonanywhere.com%2F)
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](http://perso.crans.org/besson/LICENSE.html)
 ![Contributions](https://img.shields.io/badge/Contributions-Welcome-brightgreen)
@@ -33,4 +33,6 @@ You can also set adding only an emoji in the activity title:
 ```shell
 pip install -r tests/requirements.txt
 pytest --cov-report=term-missing:skip-covered --cov=. tests/
+# linter
+flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude venv
 ```

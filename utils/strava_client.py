@@ -31,7 +31,7 @@ class StravaClient:
             refresh_response = self.__session.post("https://www.strava.com/oauth/token", data=params).json()
             return manage_db.Tokens(tokens.id, refresh_response['access_token'],
                                     refresh_response['refresh_token'], refresh_response['expires_at'])
-        except(KeyError, ValueError):
+        except (KeyError, ValueError):
             raise StravaAPIError(f'Failed to refresh token ID={tokens.id}. Athlete ID={self.__athlete_id}.')
 
     @property

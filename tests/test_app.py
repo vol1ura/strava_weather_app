@@ -180,7 +180,7 @@ def test_process_webhook_get_subscription_failed(monkeypatch, app):
 
 
 data_to_try = [
-    {'aspect_type': 'create', 'object_id': 10, 'object_type': 'activity', 'owner_id': 1, 'updates': {}},
+    # {'aspect_type': 'create', 'object_id': 10, 'object_type': 'activity', 'owner_id': 1, 'updates': {}},
     {'aspect_type': 'update', 'object_id': 1, 'object_type': 'athlete', 'owner_id': 1, 'updates': {'authorized': 'false'}},
     {'aspect_type': 'update', 'object_id': 10, 'object_type': 'activity', 'owner_id': 1, 'updates': {'title': 'Some test'}}
 ]

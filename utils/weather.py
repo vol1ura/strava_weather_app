@@ -62,11 +62,11 @@ def add_weather(athlete_id: int, activity_id: int):
         # if some problems with activity start time let's use time a hour ago
         start_time = datetime.now(timezone.utc) - timedelta(hours=1)
     elapsed_time = timedelta(seconds=activity.get('elapsed_time', 0))
-    activity_time = start_time + elapsed_time // 2 # in the middle of activity
+    activity_time = start_time + elapsed_time // 2  # in the middle of activity
 
     try:
         lat, lon = activity['start_latlng']
-    except (KeyError, TypeError):
+    except (KeyError, ValueError):
         print(f'WARNING: No start geo position for activity ID={activity_id}, T={start_time}')
         return  # ok, but no processing
 
@@ -82,7 +82,7 @@ def add_weather(athlete_id: int, activity_id: int):
         weather_description = get_weather_description(lat, lon, activity_time, settings)
         # Add air quality only if user set this option and time of activity uploading is appropriate!
         if settings.aqi and \
-            (start_time + elapsed_time + timedelta(hours=2) > datetime.now(timezone.utc).replace(tzinfo=None)):
+           (start_time + elapsed_time + timedelta(hours=2) > datetime.now(timezone.utc).replace(tzinfo=None)):
             air_conditions = get_air_description(lat, lon, settings.lan)
         else:
             air_conditions = ''
@@ -115,13 +115,13 @@ def get_weather_description(lat, lon, timestamp, s) -> str:
     try:
         w = weather_info(
             {
-                'q':f"{lat},{lon}",
+                'q': f"{lat},{lon}",
                 'dt': timestamp.strftime('%Y-%m-%d'),
                 'hour': timestamp.hour,
-                'lang':s.lan
+                'lang': s.lan
             }
         )
-    except(KeyError, ValueError):
+    except (KeyError, ValueError):
         print(f'Error! Weather request failed. User ID-{s.id} in ({lat},{lon}) at {timestamp}.')
         return ''
     t = PHRASES[s.lan]
@@ -147,7 +147,7 @@ def get_air_description(lat, lon, lan='en') -> str:
     :return: string with air quality data
     """
     try:
-        aq = air_info({ 'q': f'{lat},{lon}', 'lang': lan })
+        aq = air_info({'q': f'{lat},{lon}', 'lang': lan})
     except KeyError:
         print(f'ERROR: failed to GET air info at ({lat},{lon})')
         return ''
@@ -177,6 +177,6 @@ def get_weather_icon(lat, lon, timestamp):
             }
         )['condition']['code']
         return ICONS[icon_code]
-    except(KeyError, ValueError):
+    except (KeyError, ValueError):
         print(f'ERROR: failed to GET weather in ({lat},{lon}) at {timestamp}.')
         return
