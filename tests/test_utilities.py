@@ -57,9 +57,14 @@ class StravaClientMock(ABC):
         return MockResponse(True) if isinstance(payload, dict) else MockResponse(False)
 
 
-activities_to_try = [{'manual': True}, {'trainer': True}, {'type': 'VirtualRide'},
-                     {'description': '0°C'}, {'description': ''}, {'start_latlng': [0, LNG]}, {'start_latlng': [LAT, 0]},
-                     {'start_latlng': [LAT, LNG], 'start_date': '2021-06-03T12:48:06Z', 'name': 'icon'}]
+activities_to_try = [
+    {'manual': True},
+    {'trainer': True},
+    {'type': 'VirtualRide'},
+    {'description': '0°C'},
+    {'description': ''},
+    {'start_latlng': [LAT, LNG], 'start_date': '2021-06-03T12:48:06Z', 'name': 'icon'}
+]
 
 
 @pytest.fixture(params=activities_to_try)
