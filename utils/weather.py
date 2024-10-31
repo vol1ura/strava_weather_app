@@ -128,8 +128,9 @@ def get_weather_description(lat, lon, timestamp, s) -> str:
         print(f'Error! Weather request failed. User ID-{s.id} in ({lat},{lon}) at {timestamp}.')
         return ''
     t = PHRASES[s.lan]
+    feels_like = format(w['feelslike_c'], '.0f')
     description = f"{w['condition']['text'].capitalize()}, " \
-                  f"🌡\xa0{w['temp_c']:.0f}°C ({t[0]} {w['feelslike_c']:.0f}°C)"
+                  f"🌡\xa0{w['temp_c']:.0f}°C ({t[0]} {'0' if feels_like == '-0' else feels_like}°C)"
     description += f", 💦\xa0{w['humidity']}%" if s.hum else ""
     if s.wind:
         description += f", 💨\xa0{w['wind_kph']:.0f}{t[1]}"
