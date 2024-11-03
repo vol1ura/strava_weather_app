@@ -14,8 +14,8 @@ load_dotenv(os.path.join(os.path.dirname(__file__), '../.env'))
 BASE_URL = 'https://api.weatherapi.com/v1'
 API_KEY = os.environ.get('API_WEATHER_KEY')
 PHRASES = {
-    'ru': ['по ощущениям', 'м/с', 'с'],
-    'en': ['feels like', 'm/s', 'from']
+    'ru': ['по ощущениям', 'км/ч', 'с'],
+    'en': ['feels like', 'kph', 'from']
 }
 ICONS = {
     1000: '☀️', 1003: '🌤', 1006: '☁', 1006: '☁', 1030: '😶‍🌫️', 1135: '☁️', 1147: '☁️', 1066: '🌨',
