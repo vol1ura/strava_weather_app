@@ -59,11 +59,11 @@ def add_weather(athlete_id: int, activity_id: int):
 
     # Check starting time of activity. Convert time to integer Unix time, GMT
     try:
-        start_time = datetime.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ')
+        start_time = datetime.strptime(activity['start_date_local'], '%Y-%m-%dT%H:%M:%SZ')
     except (KeyError, ValueError):
         print(f'WARNING: Bad date format for activity ID={activity_id}. Use current time.')
         # if some problems with activity start time let's use time a hour ago
-        start_time = datetime.now(timezone.utc) - timedelta(hours=1)
+        start_time = datetime.now() - timedelta(hours=1)
     elapsed_time = timedelta(seconds=activity.get('elapsed_time', 0))
     activity_time = start_time + elapsed_time // 2  # in the middle of activity
 
@@ -84,8 +84,9 @@ def add_weather(athlete_id: int, activity_id: int):
     else:
         weather_description = get_weather_description(lat, lon, activity_time, settings)
         # Add air quality only if user set this option and time of activity uploading is appropriate!
-        if settings.aqi and \
-           (start_time + elapsed_time + timedelta(hours=2) > datetime.now(timezone.utc).replace(tzinfo=None)):
+        appropriate_time = \
+            datetime.strptime(activity['start_date'], '%Y-%m-%dT%H:%M:%SZ') + elapsed_time + timedelta(hours=2)
+        if settings.aqi and (appropriate_time > datetime.now(timezone.utc).replace(tzinfo=None)):
             air_conditions = get_air_description(lat, lon, settings.lan)
         else:
             air_conditions = ''
